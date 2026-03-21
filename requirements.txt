@@ -1,0 +1,12 @@
+streamlit>=1.30.0
+agno>=2.5.3
+openai
+icalendar
+google-search-results
+pinecone==5.4.2
+supabase
+folium
+streamlit-folium
+plotly
+pydantic>=2.0
+python-dotenv

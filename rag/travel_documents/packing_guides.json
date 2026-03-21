@@ -1,0 +1,136 @@
+[
+  {
+    "climate": "tropical",
+    "temperature_range": "25-35C / 77-95F",
+    "essentials": [
+      "Lightweight breathable clothing",
+      "Sunscreen SPF 50+",
+      "Insect repellent with DEET",
+      "Sunglasses with UV protection",
+      "Wide-brim hat or cap",
+      "Reusable water bottle",
+      "Rain jacket or compact umbrella",
+      "Comfortable walking sandals",
+      "Swimwear",
+      "Quick-dry towel"
+    ],
+    "optional": [
+      "Snorkeling gear",
+      "Waterproof phone pouch",
+      "Aloe vera gel for sunburn",
+      "Lightweight long sleeves for mosquito protection"
+    ],
+    "tips": "Pack light fabrics like linen and cotton. Humidity is high so quick-dry materials are your friend."
+  },
+  {
+    "climate": "mediterranean",
+    "temperature_range": "15-30C / 59-86F",
+    "essentials": [
+      "Light layers for warm days and cool evenings",
+      "Comfortable walking shoes",
+      "Sunglasses",
+      "Sunscreen SPF 30+",
+      "Light jacket or cardigan for evenings",
+      "Smart casual outfit for restaurants",
+      "Day pack for sightseeing",
+      "Reusable water bottle"
+    ],
+    "optional": [
+      "Swimwear for coastal areas",
+      "Scarf for visiting religious sites",
+      "Portable charger",
+      "Guidebook or offline maps"
+    ],
+    "tips": "Mediterranean weather is generally pleasant but pack a light layer for breezy evenings near the coast."
+  },
+  {
+    "climate": "temperate",
+    "temperature_range": "5-25C / 41-77F",
+    "essentials": [
+      "Layered clothing system",
+      "Waterproof jacket",
+      "Comfortable walking shoes (waterproof preferred)",
+      "Umbrella",
+      "Warm sweater or fleece",
+      "Scarf and light gloves (autumn/spring)",
+      "Day pack",
+      "Reusable water bottle"
+    ],
+    "optional": [
+      "Thermal base layer for cooler periods",
+      "Beanie hat",
+      "Waterproof pants",
+      "Travel adapter"
+    ],
+    "tips": "Weather can change quickly. Layering is key — be ready for sun, rain, and wind in the same day."
+  },
+  {
+    "climate": "cold/subarctic",
+    "temperature_range": "-15 to 10C / 5-50F",
+    "essentials": [
+      "Heavy insulated jacket / down parka",
+      "Thermal base layers (top + bottom)",
+      "Warm fleece mid-layer",
+      "Waterproof outer shell",
+      "Insulated waterproof boots",
+      "Warm hat covering ears",
+      "Insulated gloves or mittens",
+      "Thick wool socks",
+      "Neck gaiter or scarf",
+      "Hand warmers"
+    ],
+    "optional": [
+      "Snow pants",
+      "Ski goggles for extreme conditions",
+      "Crampons for icy terrain",
+      "Lip balm with SPF"
+    ],
+    "tips": "Dress in layers. Merino wool base layers are worth the investment. Protect extremities — frostbite hits fingers, toes, and ears first."
+  },
+  {
+    "climate": "hot_desert",
+    "temperature_range": "20-45C / 68-113F",
+    "essentials": [
+      "Lightweight loose-fitting clothing",
+      "Long sleeves for sun protection",
+      "Wide-brim hat",
+      "High SPF sunscreen (50+)",
+      "Quality sunglasses",
+      "Reusable insulated water bottle",
+      "Comfortable closed-toe shoes (sand protection)",
+      "Scarf/shemagh for dust and sun",
+      "Lip balm with SPF"
+    ],
+    "optional": [
+      "Electrolyte packets",
+      "Cooling towel",
+      "Sand-proof bag for electronics",
+      "Light long pants instead of shorts"
+    ],
+    "tips": "Stay hydrated — drink more water than you think you need. Avoid midday sun (11am-3pm). Desert nights can be surprisingly cold."
+  },
+  {
+    "climate": "alpine/mountain",
+    "temperature_range": "-5 to 20C / 23-68F",
+    "essentials": [
+      "Layered clothing system",
+      "Waterproof hiking boots (broken in)",
+      "Waterproof shell jacket",
+      "Fleece or down mid-layer",
+      "Moisture-wicking base layers",
+      "Hiking socks (merino wool)",
+      "Sun protection (hat, sunscreen, sunglasses)",
+      "Daypack with rain cover",
+      "Trekking poles",
+      "Headlamp"
+    ],
+    "optional": [
+      "Gaiters",
+      "Blister kit",
+      "Emergency whistle",
+      "Altitude sickness medication",
+      "Thermal flask for hot drinks"
+    ],
+    "tips": "Altitude changes temperature fast — prepare for all conditions. UV is stronger at elevation, wear sunscreen even on cloudy days."
+  }
+]
