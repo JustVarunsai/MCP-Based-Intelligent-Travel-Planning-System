@@ -6,8 +6,8 @@ import streamlit as st
 st.set_page_config(page_title="Trip Comparison", page_icon="⚖️", layout="wide")
 st.title("⚖️ Compare Trips")
 
-if not st.session_state.get("SUPABASE_URL"):
-    st.info("Enter your Supabase credentials in the sidebar to compare saved trips.")
+if not st.session_state.get("SUPABASE_DATABASE_URL"):
+    st.info("Enter your Supabase DB URL in the sidebar to compare saved trips.")
     st.stop()
 
 try:

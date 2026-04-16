@@ -13,7 +13,7 @@ if not trip_id:
     st.info("Select a trip from the My Trips page first.")
     st.stop()
 
-if not st.session_state.get("SUPABASE_URL"):
+if not st.session_state.get("SUPABASE_DATABASE_URL"):
     st.info("Supabase not configured.")
     st.stop()
 

@@ -6,8 +6,8 @@ import streamlit as st
 st.set_page_config(page_title="My Trips", page_icon="📋", layout="wide")
 st.title("📋 My Trips")
 
-if not st.session_state.get("SUPABASE_URL"):
-    st.info("Enter your Supabase URL and Key in the sidebar to see saved trips.")
+if not st.session_state.get("SUPABASE_DATABASE_URL"):
+    st.info("Enter your Supabase DB URL in the sidebar to see saved trips.")
     st.stop()
 
 try:

@@ -1,10 +1,17 @@
 import os
+from dotenv import load_dotenv
 import streamlit as st
+
+# load .env if present
+load_dotenv()
 
 
 def get_key(name, default=""):
     """Pull a key from session state first, then env vars."""
-    val = st.session_state.get(name, "")
+    try:
+        val = st.session_state.get(name, "")
+    except Exception:
+        val = ""
     if val:
         return val
     return os.getenv(name, default)
@@ -12,9 +19,7 @@ def get_key(name, default=""):
 
 class Config:
     # --- LLM ---
-    OPENAI_MODEL = "gpt-4o"
-    EMBEDDING_MODEL = "text-embedding-3-small"
-    EMBEDDING_DIMENSIONS = 1536
+    OPENAI_MODEL = "gpt-4o-mini"
 
     # --- MCP server commands ---
     AIRBNB_MCP_CMD = "npx -y @openbnb/mcp-server-airbnb --ignore-robots-txt"
@@ -39,12 +44,12 @@ class Config:
         return get_key("PINECONE_API_KEY")
 
     @property
-    def supabase_url(self):
-        return get_key("SUPABASE_URL")
+    def database_url(self):
+        return get_key("SUPABASE_DATABASE_URL")
 
     @property
-    def supabase_key(self):
-        return get_key("SUPABASE_KEY")
+    def serper_api_key(self):
+        return get_key("SERPER_API_KEY")
 
 
 config = Config()

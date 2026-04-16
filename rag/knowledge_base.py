@@ -1,16 +1,49 @@
-from pinecone import ServerlessSpec
-from agno.knowledge.embedder.openai import OpenAIEmbedder
+"""
+RAG knowledge base backed by Pinecone with Pinecone's own
+free embedding model (multilingual-e5-large, 1024 dims).
+No OpenAI credits used for embeddings.
+"""
+from typing import List, Optional, Tuple, Dict, Any
+from dataclasses import dataclass, field
+
+from pinecone import Pinecone, ServerlessSpec
+from agno.knowledge.embedder.base import Embedder
 from agno.vectordb.pineconedb import PineconeDb
 from agno.knowledge.knowledge import Knowledge
+from agno.knowledge.document.base import Document
 from config import config
+
+EMBEDDING_MODEL = "multilingual-e5-large"
+EMBEDDING_DIM = 1024
+
+
+@dataclass
+class PineconeEmbedder(Embedder):
+    """Uses Pinecone's free inference API for embeddings."""
+    api_key: str = ""
+    dimensions: Optional[int] = EMBEDDING_DIM
+    _pc: Any = field(default=None, repr=False, init=False)
+
+    def _client(self):
+        if self._pc is None:
+            key = self.api_key or config.pinecone_api_key
+            self._pc = Pinecone(api_key=key)
+        return self._pc
+
+    def get_embedding(self, text: str) -> List[float]:
+        result = self._client().inference.embed(
+            model=EMBEDDING_MODEL,
+            inputs=[text],
+            parameters={"input_type": "query"},
+        )
+        return result.data[0].values
+
+    def get_embedding_and_usage(self, text: str) -> Tuple[List[float], Optional[Dict]]:
+        return self.get_embedding(text), None
 
 
 def create_embedder():
-    return OpenAIEmbedder(
-        id=config.EMBEDDING_MODEL,
-        dimensions=config.EMBEDDING_DIMENSIONS,
-        api_key=config.openai_api_key,
-    )
+    return PineconeEmbedder(api_key=config.pinecone_api_key)
 
 
 def create_vector_db(embedder=None):
@@ -18,7 +51,7 @@ def create_vector_db(embedder=None):
         embedder = create_embedder()
     return PineconeDb(
         name=config.PINECONE_INDEX,
-        dimension=config.EMBEDDING_DIMENSIONS,
+        dimension=EMBEDDING_DIM,
         spec=ServerlessSpec(
             cloud=config.PINECONE_CLOUD,
             region=config.PINECONE_REGION,

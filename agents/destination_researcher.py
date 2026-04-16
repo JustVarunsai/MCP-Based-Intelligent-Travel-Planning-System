@@ -1,12 +1,13 @@
 from agno.agent import Agent
-from agno.tools.serpapi import SerpApiTools
+from agno.tools.serper import SerperTools
 from agents.base import create_model
+from config import config
 from rag.knowledge_base import create_knowledge_base
 
 
 def create_destination_researcher(knowledge=None):
     """
-    Researches destinations using SerpAPI (live web) and the
+    Researches destinations using Serper (live web) and the
     Pinecone knowledge base (curated travel data).
     """
     return Agent(
@@ -24,7 +25,7 @@ def create_destination_researcher(knowledge=None):
             "List the top attractions with brief descriptions",
             "Keep your output structured and concise",
         ],
-        tools=[SerpApiTools()],
+        tools=[SerperTools(api_key=config.serper_api_key)],
         knowledge=knowledge or create_knowledge_base(),
         search_knowledge=True,
         add_datetime_to_context=True,

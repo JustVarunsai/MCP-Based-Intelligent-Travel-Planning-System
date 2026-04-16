@@ -1,16 +1,26 @@
 """
 Main trip planner page with real-time agent activity streaming.
 """
+import os
 import asyncio
 from queue import Queue, Empty
 from threading import Thread
 from datetime import date, datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import streamlit as st
 from components.agent_activity_panel import init_agent_states, render_agent_panel, update_state
 from services.export_service import markdown_to_ics
 
 st.set_page_config(page_title="Trip Planner", page_icon="🗺️", layout="wide")
+
+# ── pre-load env keys into session state ─────────────────────────
+for k in ("OPENAI_API_KEY", "PINECONE_API_KEY", "SERPER_API_KEY",
+          "GOOGLE_MAPS_API_KEY", "SUPABASE_DATABASE_URL"):
+    if k not in st.session_state:
+        st.session_state[k] = os.getenv(k, "")
 
 # ── session defaults ─────────────────────────────────────────────
 for key in ("itinerary_md", "itinerary_json"):
@@ -136,7 +146,7 @@ if st.session_state.itinerary_md:
             mime="text/calendar",
         )
     with bcol2:
-        if st.session_state.get("SUPABASE_URL"):
+        if st.session_state.get("SUPABASE_DATABASE_URL"):
             if st.button("Save Trip"):
                 try:
                     from database.crud import UserCRUD, TripCRUD

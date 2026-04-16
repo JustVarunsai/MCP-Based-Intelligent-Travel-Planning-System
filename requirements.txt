@@ -2,9 +2,9 @@ streamlit>=1.30.0
 agno>=2.5.3
 openai
 icalendar
-google-search-results
 pinecone==5.4.2
-supabase
+sqlalchemy>=2.0
+psycopg2-binary
 folium
 streamlit-folium
 plotly
