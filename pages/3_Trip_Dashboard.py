@@ -1,8 +1,16 @@
 """
 Dashboard for a single saved trip — itinerary, map, cost charts, packing list.
 """
+import os
 import json
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
+
+for k in ("OPENAI_API_KEY", "PINECONE_API_KEY", "SERPER_API_KEY", "SUPABASE_DATABASE_URL"):
+    if k not in st.session_state:
+        st.session_state[k] = os.getenv(k, "")
 
 st.set_page_config(page_title="Trip Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Trip Dashboard")
@@ -62,7 +70,7 @@ with tab_map:
         st.info("No structured location data. Map requires geocoded coordinates.")
 
 with tab_costs:
-    from components.cost_charts import render_cost_breakdown, render_daily_spending
+    from components.cost_charts import render_daily_spending
 
     # try to build breakdown from structured data
     daily_plans = itinerary_json.get("daily_plans", [])
@@ -83,10 +91,12 @@ with tab_costs:
         st.info("No structured cost data available.")
 
 with tab_packing:
-    packing = itinerary_json.get("packing_list", [])
+    import hashlib
+    packing = [p for p in (itinerary_json.get("packing_list") or []) if p]
     if packing:
         st.markdown("Check off items as you pack:")
         for item in packing:
-            st.checkbox(item, key=f"pack_{item}")
+            safe_key = f"pack_{hashlib.md5(str(item).encode()).hexdigest()[:8]}"
+            st.checkbox(str(item), key=safe_key)
     else:
         st.info("No packing list in the itinerary data.")

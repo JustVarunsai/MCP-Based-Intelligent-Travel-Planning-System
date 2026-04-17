@@ -23,7 +23,6 @@ class Config:
 
     # --- MCP server commands ---
     AIRBNB_MCP_CMD = "npx -y @openbnb/mcp-server-airbnb --ignore-robots-txt"
-    MAPS_MCP_CMD = "npx @gongrzhe/server-travelplanner-mcp"
     MCP_TIMEOUT = 60  # seconds
 
     # --- Pinecone ---
@@ -34,10 +33,6 @@ class Config:
     @property
     def openai_api_key(self):
         return get_key("OPENAI_API_KEY")
-
-    @property
-    def google_maps_key(self):
-        return get_key("GOOGLE_MAPS_API_KEY")
 
     @property
     def pinecone_api_key(self):

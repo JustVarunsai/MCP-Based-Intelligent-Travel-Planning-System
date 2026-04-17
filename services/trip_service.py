@@ -29,7 +29,7 @@ async def plan_trip_streaming(
         f"Do NOT ask clarifying questions — generate the full plan immediately."
     )
 
-    response = await team.arun(input=prompt, stream=True, stream_events=True)
+    response = team.arun(input=prompt, stream=True, stream_events=True)
 
     async for event in response:
         # figure out if this is a member-level or team-level event

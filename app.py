@@ -15,32 +15,63 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── custom theme via CSS ─────────────────────────────────────────
+# ── light neutral theme ──────────────────────────────────────────
 st.markdown("""
 <style>
     .stApp {
-        background-color: #0F172A;
-        color: #F8FAFC;
+        background-color: #FAFAF9;
+        color: #27272A;
     }
     [data-testid="stSidebar"] {
-        background-color: #1E293B;
+        background-color: #F4F4F5;
+        border-right: 1px solid #E4E4E7;
+    }
+    [data-testid="stSidebar"] * {
+        color: #27272A;
+    }
+    .stButton > button {
+        background-color: #27272A;
+        color: #FAFAF9;
+        border: 1px solid #27272A;
+        border-radius: 6px;
+    }
+    .stButton > button:hover {
+        background-color: #3F3F46;
+        border-color: #3F3F46;
+        color: #FAFAF9;
     }
     .stButton > button[kind="primary"] {
-        background-color: #2563EB;
-        color: white;
-        border: none;
+        background-color: #18181B;
+        color: #FAFAF9;
     }
-    .stButton > button[kind="primary"]:hover {
-        background-color: #1D4ED8;
+    div[data-testid="stMetric"] {
+        background-color: #FFFFFF;
+        border: 1px solid #E4E4E7;
+        padding: 1rem;
+        border-radius: 8px;
     }
-    .stMetric label, .stMetric [data-testid="stMetricValue"] {
-        color: #F8FAFC;
+    div[data-baseweb="input"] {
+        background-color: #FFFFFF;
     }
+    /* expander styling */
+    .streamlit-expanderHeader {
+        background-color: #FFFFFF;
+        border: 1px solid #E4E4E7;
+        border-radius: 6px;
+    }
+    h1, h2, h3, h4, h5 {
+        color: #18181B;
+    }
+    a {
+        color: #52525B;
+    }
+    /* container borders */
     div[data-testid="stContainer"] {
-        border-color: #334155;
+        border-color: #E4E4E7 !important;
     }
-    h1, h2, h3, h4 {
-        color: #F8FAFC;
+    /* status widget */
+    [data-testid="stStatusWidget"] {
+        background-color: #FFFFFF;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -48,7 +79,6 @@ st.markdown("""
 # ── pre-load API keys from .env into session state ───────────────
 _ENV_KEYS = [
     "OPENAI_API_KEY",
-    "GOOGLE_MAPS_API_KEY",
     "PINECONE_API_KEY",
     "SERPER_API_KEY",
     "SUPABASE_DATABASE_URL",
@@ -57,20 +87,19 @@ for k in _ENV_KEYS:
     if k not in st.session_state:
         st.session_state[k] = os.getenv(k, "")
 
-# ── sidebar: API key inputs ──────────────────────────────────────
+# ── sidebar ──────────────────────────────────────────────────────
 with st.sidebar:
-    st.header("API Keys")
+    st.markdown("### API Keys")
 
-    st.text_input("OpenAI API Key", type="password", key="OPENAI_API_KEY",
-                  help="Required — powers the AI agents")
-    st.text_input("Google Maps API Key", type="password", key="GOOGLE_MAPS_API_KEY",
-                  help="Route & distance calculations via MCP")
-    st.text_input("Pinecone API Key", type="password", key="PINECONE_API_KEY",
-                  help="Required — vector knowledge base for RAG")
-    st.text_input("Serper API Key", type="password", key="SERPER_API_KEY",
-                  help="Required — web search for live travel info")
-    st.text_input("Supabase DB URL", type="password", key="SUPABASE_DATABASE_URL",
-                  help="Optional — Postgres connection string to save trips")
+    with st.expander("Configure", expanded=False):
+        st.text_input("OpenAI", type="password", key="OPENAI_API_KEY",
+                      help="Powers the AI agents")
+        st.text_input("Pinecone", type="password", key="PINECONE_API_KEY",
+                      help="Vector knowledge base for RAG")
+        st.text_input("Serper", type="password", key="SERPER_API_KEY",
+                      help="Web search for live travel info")
+        st.text_input("Supabase DB URL", type="password", key="SUPABASE_DATABASE_URL",
+                      help="Optional — to save trips")
 
     keys_ok = all([
         st.session_state.get("OPENAI_API_KEY"),
@@ -78,38 +107,52 @@ with st.sidebar:
         st.session_state.get("SERPER_API_KEY"),
     ])
     if keys_ok:
-        st.success("Core API keys set")
+        st.success("All keys configured")
     else:
-        st.warning("Enter OpenAI, Pinecone, and Serper keys to start planning.")
+        st.warning("Missing required API keys")
 
     st.divider()
+    st.caption("Maps powered by OpenStreetMap — free, no key needed.")
     st.caption("Built with Agno · OpenAI · MCP · Pinecone · Supabase")
 
 # ── landing page ─────────────────────────────────────────────────
 
 st.title("AI Travel Planner")
-st.subheader("Multi-Agent System powered by MCP & RAG")
+st.markdown("##### Multi-Agent System powered by MCP & RAG")
 
-st.markdown("""
-Plan your next trip with a team of AI agents that collaborate in real-time:
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("AI Agents", "5", help="Specialized agents coordinating together")
+with col2:
+    st.metric("Destinations", "30+", help="Curated knowledge base entries")
+with col3:
+    st.metric("Budget Regions", "10", help="Regional cost benchmarks")
+with col4:
+    st.metric("Packing Guides", "6", help="Climate-based packing lists")
 
-| Agent | What it does |
-|-------|-------------|
-| **Destination Researcher** | Pulls live info + curated knowledge about your destination |
-| **Accommodation Agent** | Searches Airbnb via MCP for real listings and prices |
-| **Route Optimizer** | Calculates distances and optimal daily routes |
-| **Budget Optimizer** | Analyses costs against regional benchmarks |
-| **Itinerary Compiler** | Stitches everything into a structured day-by-day plan |
+st.markdown("---")
 
----
+left, right = st.columns([1, 1])
 
-**Get started** head to the **Trip Planner** page in the sidebar.
+with left:
+    st.markdown("### The Agent Team")
+    st.markdown("""
+- **Destination Researcher** — live web search + curated knowledge
+- **Accommodation Agent** — real Airbnb listings via MCP
+- **Route Optimizer** — free OpenStreetMap + OSRM routing
+- **Budget Optimizer** — regional cost benchmarks from RAG
+- **Itinerary Compiler** — structured day-by-day plan
 """)
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Destinations in KB", "30+", help="Curated knowledge base entries")
-with col2:
-    st.metric("Budget Regions", "10", help="Regional cost benchmarks")
-with col3:
-    st.metric("Packing Guides", "6", help="Climate-based packing lists")
+with right:
+    st.markdown("### How it works")
+    st.markdown("""
+1. You enter a destination, dates, budget, preferences
+2. An Orchestrator delegates tasks to each specialist agent
+3. Agents fetch live data via MCP servers and RAG
+4. The Itinerary Compiler produces a structured plan
+5. Save, view on map, export to calendar
+""")
+
+st.markdown("---")
+st.info("Head to the **Trip Planner** page in the sidebar to start planning.")

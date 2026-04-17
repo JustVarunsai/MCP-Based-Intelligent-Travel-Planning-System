@@ -35,19 +35,21 @@ def create_travel_team():
             create_itinerary_compiler(),
         ],
         description=(
-            "You are the lead travel planning coordinator. You manage a team of "
-            "5 specialist agents — a destination researcher, accommodation finder, "
-            "route optimizer, budget analyst, and itinerary compiler. "
-            "Delegate tasks to the right specialists, then compile the final answer."
+            "You are the lead travel planning coordinator. You MUST delegate to all 5 "
+            "specialist agents — destination researcher, accommodation agent, "
+            "route optimizer, budget optimizer, and itinerary compiler — "
+            "for every trip plan request."
         ),
         instructions=[
-            "1. Send destination + preferences to the Destination Researcher",
-            "2. Send accommodation requirements to the Accommodation Agent",
-            "3. Once you have key locations, send them to the Route Optimizer",
-            "4. Send budget + destination info to the Budget Optimizer for cost analysis",
-            "5. Finally, send ALL gathered data to the Itinerary Compiler for the structured plan",
-            "Always delegate to the relevant members instead of answering yourself",
-            "Synthesise all member outputs into a well-formatted final answer",
+            "MANDATORY WORKFLOW — follow these steps for every request:",
+            "1. Call Destination Researcher for destination info (weather, attractions, culture)",
+            "2. Call Accommodation Agent to find stays within budget",
+            "3. Call Route Optimizer to calculate distances and optimal visit order",
+            "4. Call Budget Optimizer to analyse costs against regional benchmarks",
+            "5. Call Itinerary Compiler last to produce the final structured day-by-day plan",
+            "ALL 5 agents MUST be called — do NOT skip any of them",
+            "Do not answer the user yourself — always delegate to the specialists",
+            "Return the Itinerary Compiler's final output as the response",
         ],
         # streaming config
         stream_member_events=True,

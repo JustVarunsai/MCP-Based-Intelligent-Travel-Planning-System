@@ -1,7 +1,15 @@
 """
 Side-by-side comparison of two saved trips.
 """
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
+
+for k in ("OPENAI_API_KEY", "PINECONE_API_KEY", "SERPER_API_KEY", "SUPABASE_DATABASE_URL"):
+    if k not in st.session_state:
+        st.session_state[k] = os.getenv(k, "")
 
 st.set_page_config(page_title="Trip Comparison", page_icon="⚖️", layout="wide")
 st.title("⚖️ Compare Trips")
@@ -24,7 +32,14 @@ if len(trips) < 2:
     st.info("You need at least 2 saved trips to compare. Create more trips first.")
     st.stop()
 
-trip_labels = {f"{t['destination']} ({t['created_at'][:10]})": t for t in trips}
+def _fmt_date(val):
+    if val is None:
+        return ""
+    if hasattr(val, "strftime"):
+        return val.strftime("%Y-%m-%d")
+    return str(val)[:10]
+
+trip_labels = {f"{t['destination']} ({_fmt_date(t.get('created_at'))})": t for t in trips}
 labels = list(trip_labels.keys())
 
 col1, col2 = st.columns(2)

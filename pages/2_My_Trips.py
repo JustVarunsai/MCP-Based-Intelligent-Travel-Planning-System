@@ -1,7 +1,25 @@
 """
 Saved trips page — lists all trips from Supabase.
 """
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
+
+# pre-load env keys into session state
+for k in ("OPENAI_API_KEY", "PINECONE_API_KEY", "SERPER_API_KEY", "SUPABASE_DATABASE_URL"):
+    if k not in st.session_state:
+        st.session_state[k] = os.getenv(k, "")
+
+
+def _fmt_date(val):
+    """Safely convert a value to a short date string."""
+    if val is None:
+        return ""
+    if hasattr(val, "strftime"):
+        return val.strftime("%Y-%m-%d")
+    return str(val)[:10]
 
 st.set_page_config(page_title="My Trips", page_icon="📋", layout="wide")
 st.title("📋 My Trips")
@@ -40,7 +58,7 @@ try:
                 if est:
                     st.metric("Est. Cost", f"${est:,.0f}")
             with c3:
-                st.caption(trip.get("created_at", "")[:10])
+                st.caption(_fmt_date(trip.get("created_at")))
             with c4:
                 if st.button("View", key=f"view_{trip['id']}"):
                     st.session_state["selected_trip_id"] = trip["id"]

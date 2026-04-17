@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 @pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
-    reason="Supabase not configured — set SUPABASE_URL and SUPABASE_KEY to run"
+    not os.getenv("SUPABASE_DATABASE_URL"),
+    reason="Supabase not configured — set SUPABASE_DATABASE_URL to run"
 )
 def test_user_crud():
     from database.crud import UserCRUD
@@ -25,7 +25,7 @@ def test_user_crud():
 
 
 @pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
+    not os.getenv("SUPABASE_DATABASE_URL"),
     reason="Supabase not configured"
 )
 def test_trip_crud():

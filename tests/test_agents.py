@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # mock API keys so constructors don't fail
 os.environ.setdefault("OPENAI_API_KEY", "sk-test")
-os.environ.setdefault("GOOGLE_MAPS_API_KEY", "test")
 os.environ.setdefault("PINECONE_API_KEY", "test")
+os.environ.setdefault("SERPER_API_KEY", "test")
 
 
 def test_destination_researcher_creation():

@@ -1,8 +1,16 @@
 """
 Explore destinations via semantic search over the Pinecone knowledge base.
 """
+import os
 import json
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
+
+for k in ("OPENAI_API_KEY", "PINECONE_API_KEY", "SERPER_API_KEY", "SUPABASE_DATABASE_URL"):
+    if k not in st.session_state:
+        st.session_state[k] = os.getenv(k, "")
 
 st.set_page_config(page_title="Destination Explorer", page_icon="🌍", layout="wide")
 st.title("🌍 Destination Explorer")
@@ -25,7 +33,7 @@ if query:
             st.info("No matching destinations found. Try a different search.")
         else:
             st.caption(f"Found {len(results)} results")
-            for doc in results:
+            for idx, doc in enumerate(results):
                 meta = doc.meta_data or {}
                 doc_type = meta.get("type", "")
 
@@ -54,12 +62,11 @@ if query:
                                     f"~${budget.get('budget', '?')}-"
                                     f"${budget.get('mid', '?')}/day"
                                 )
-                            if st.button("Plan a trip here", key=f"plan_{data.get('name', '')}"):
+                            if st.button("Plan a trip here", key=f"plan_{idx}"):
                                 st.session_state["prefill_destination"] = data.get("name", "")
                                 st.switch_page("pages/1_Trip_Planner.py")
                 else:
-                    # budget benchmark or packing guide
-                    with st.expander(f"{doc_type}: {meta.get('region', meta.get('climate', 'Info'))}"):
+                    with st.expander(f"{doc_type}: {meta.get('region', meta.get('climate', 'Info'))} ({idx})"):
                         st.text(doc.content[:500])
 
     except Exception as e:
