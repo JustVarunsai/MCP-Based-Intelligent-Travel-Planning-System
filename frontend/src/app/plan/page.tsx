@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import {
   CheckCircle2, Loader2, AlertTriangle, Wrench, Sparkles, ArrowRight,
@@ -25,7 +26,17 @@ const TAGS = [
 ];
 
 export default function PlanPage() {
-  const [destination, setDestination] = useState("");
+  return (
+    <Suspense fallback={null}>
+      <PlanForm />
+    </Suspense>
+  );
+}
+
+function PlanForm() {
+  const search = useSearchParams();
+  const initial = search.get("destination") || "";
+  const [destination, setDestination] = useState(initial);
   const [days, setDays] = useState(5);
   const [budget, setBudget] = useState(1500);
   const [prefs, setPrefs] = useState("");
@@ -35,7 +46,10 @@ export default function PlanPage() {
   const [error, setError] = useState<string | null>(null);
   const sinceRef = useRef(0);
 
-  // start a run
+  useEffect(() => {
+    if (initial && !destination) setDestination(initial);
+  }, [initial, destination]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -192,9 +206,7 @@ export default function PlanPage() {
         </div>
       )}
 
-      {status && (
-        <AgentPanel status={status} />
-      )}
+      {status && <AgentPanel status={status} />}
 
       {status?.status === "completed" && status.content && (
         <div className="card">
@@ -213,9 +225,27 @@ export default function PlanPage() {
 
 function AgentPanel({ status }: { status: PlanStatus }) {
   const states = status.agent_states;
-  const total = AGENT_ORDER.length;
-  const done = AGENT_ORDER.filter((n) => states[n]?.status === "done").length;
-  const working = AGENT_ORDER.filter((n) => states[n]?.status === "working").length;
+  const specialists = AGENT_ORDER.length;
+  const specialistsDone = AGENT_ORDER.filter((n) => states[n]?.status === "done").length;
+  const specialistsWorking = AGENT_ORDER.filter((n) => states[n]?.status === "working").length;
+
+  const orchestratorState: AgentState = (() => {
+    if (status.status === "completed") return { status: "done", tools: [] };
+    if (status.status === "failed") return { status: "idle", tools: [] };
+    if (specialistsDone === specialists) return { status: "working", tools: [] };
+    return { status: "idle", tools: [] };
+  })();
+
+  const total = specialists + 1;
+  const done = specialistsDone + (orchestratorState.status === "done" ? 1 : 0);
+  const working = specialistsWorking + (orchestratorState.status === "working" ? 1 : 0);
+
+  let phaseLabel = "queued";
+  if (status.status === "completed") phaseLabel = "completed";
+  else if (status.status === "failed") phaseLabel = "failed";
+  else if (specialistsDone === specialists) phaseLabel = "compiling final response";
+  else if (specialistsDone > 0 || specialistsWorking > 0) phaseLabel = "specialists running";
+  else phaseLabel = "starting";
 
   return (
     <div className="card space-y-4">
@@ -224,7 +254,7 @@ function AgentPanel({ status }: { status: PlanStatus }) {
           <div className="font-semibold">Agent activity</div>
           <div className="text-xs text-[color:var(--muted)]">
             {done}/{total} complete · {working} working ·{" "}
-            <span className="kbd">{status.status}</span>
+            <span className="kbd">{phaseLabel}</span>
           </div>
         </div>
         {status.status === "running" && (
@@ -251,32 +281,59 @@ function AgentPanel({ status }: { status: PlanStatus }) {
           const s: AgentState = states[name] || { status: "idle", tools: [] };
           return <AgentRow key={name} name={name} state={s} />;
         })}
+        <AgentRow
+          name="Orchestrator"
+          state={orchestratorState}
+          subtitle="Synthesises the 5 specialist outputs into the final answer"
+        />
       </div>
 
-      {status.events.length > 0 && (
-        <details className="text-xs text-[color:var(--muted)]">
-          <summary className="cursor-pointer hover:text-[color:var(--text)]">
-            Event log ({status.events.length})
-          </summary>
-          <div className="mt-2 max-h-48 overflow-auto space-y-1 font-mono">
-            {status.events.slice(-30).map((e: AgentEvent) => (
-              <div key={e.i} className="flex gap-2 text-[11px]">
-                <span className="text-[color:var(--muted-2)]">
-                  {e.ts.slice(11, 19)}
-                </span>
-                <span className="text-[color:var(--muted)]">{e.type}</span>
-                {e.agent && <span>{e.agent}</span>}
-                {e.tool && <span className="text-[color:var(--accent)]">→ {e.tool}</span>}
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
+      {(() => {
+        const actions = status.events.filter(
+          (e) => e.type === "agent_tool_start" || e.type === "agent_completed"
+        );
+        if (actions.length === 0) return null;
+        return (
+          <details className="text-xs text-[color:var(--muted)]" open>
+            <summary className="cursor-pointer hover:text-[color:var(--text)]">
+              Activity log ({actions.length})
+            </summary>
+            <div className="mt-2 max-h-64 overflow-auto space-y-1.5 font-mono">
+              {actions.slice(-40).map((e: AgentEvent) => (
+                <div key={e.i} className="flex gap-2 text-[11px]">
+                  <span className="text-[color:var(--muted-2)] w-14 flex-shrink-0">
+                    {e.ts.slice(11, 19)}
+                  </span>
+                  <span className="font-medium w-40 flex-shrink-0 truncate">
+                    {e.agent}
+                  </span>
+                  {e.type === "agent_tool_start" ? (
+                    <span className="text-[color:var(--text)] truncate">
+                      <span className="text-[color:var(--accent)]">→ {e.tool}</span>
+                      {e.args ? (
+                        <span className="text-[color:var(--muted)]">({e.args})</span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-[color:var(--success)]">finished</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
+        );
+      })()}
     </div>
   );
 }
 
-function AgentRow({ name, state }: { name: string; state: AgentState }) {
+function AgentRow({
+  name, state, subtitle,
+}: {
+  name: string;
+  state: AgentState;
+  subtitle?: string;
+}) {
   const status = state.status;
   return (
     <div
@@ -300,6 +357,9 @@ function AgentRow({ name, state }: { name: string; state: AgentState }) {
         </div>
         <div className="min-w-0">
           <div className="font-medium text-sm">{name}</div>
+          {subtitle && (
+            <div className="text-[11px] text-[color:var(--muted)] mt-0.5">{subtitle}</div>
+          )}
           {state.tools.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {state.tools.slice(0, 5).map((t) => (
@@ -326,7 +386,6 @@ function mergeStatus(prev: PlanStatus | null, snap: PlanStatus): PlanStatus {
   return {
     ...snap,
     events: [...prev.events, ...snap.events],
-    // server already includes the latest agent_states snapshot
     agent_states: snap.agent_states,
   };
 }

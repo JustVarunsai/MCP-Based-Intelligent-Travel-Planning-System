@@ -1,11 +1,3 @@
-"""
-In-memory run state for plan jobs.
-
-The frontend polls /api/plan/{run_id}/status to follow progress while a
-background task is generating the itinerary. This is intentionally NOT a
-queue / Celery — for a single-instance demo the in-process dict is fine
-and far simpler to defend in viva.
-"""
 from __future__ import annotations
 import threading
 from datetime import datetime, timezone
@@ -41,11 +33,9 @@ def append_event(run_id: str, event: dict[str, Any]) -> None:
         run = _runs.get(run_id)
         if not run:
             return
-        # tag with order + timestamp
         event = {**event, "i": len(run["events"]), "ts": now_iso()}
         run["events"].append(event)
 
-        # update agent_states map for quick UI render
         agent = event.get("agent")
         etype = event.get("type")
         if agent:
@@ -60,15 +50,20 @@ def append_event(run_id: str, event: dict[str, Any]) -> None:
                 if tool and tool not in state["tools"]:
                     state["tools"].append(tool)
 
-        # accumulate final content when team-level content arrives
         if etype in ("content", "completed"):
             chunk = event.get("content") or ""
             if chunk:
                 run["content"] += chunk
 
 
-def set_status(run_id: str, status: str, *, error: str | None = None,
-               result: Any | None = None, trip_id: str | None = None) -> None:
+def set_status(
+    run_id: str,
+    status: str,
+    *,
+    error: str | None = None,
+    result: Any | None = None,
+    trip_id: str | None = None,
+) -> None:
     with _lock:
         run = _runs.get(run_id)
         if not run:
@@ -82,6 +77,9 @@ def set_status(run_id: str, status: str, *, error: str | None = None,
             run["trip_id"] = trip_id
         if status in ("completed", "failed"):
             run["ended_at"] = now_iso()
+            for state in run["agent_states"].values():
+                if state.get("status") == "working":
+                    state["status"] = "done"
 
 
 def get_run(run_id: str) -> dict[str, Any] | None:
@@ -91,7 +89,6 @@ def get_run(run_id: str) -> dict[str, Any] | None:
 
 
 def get_run_status(run_id: str, *, since: int = 0) -> dict[str, Any] | None:
-    """Lightweight status snapshot for polling — only events after `since`."""
     with _lock:
         run = _runs.get(run_id)
         if not run:

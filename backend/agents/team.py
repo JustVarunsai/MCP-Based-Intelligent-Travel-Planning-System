@@ -1,7 +1,3 @@
-"""
-Assembles the 5-member travel planning team under an Orchestrator (Agno coordinate mode).
-The team accepts a shared MCPTools instance — caller manages its async lifecycle.
-"""
 from agno.team.team import Team
 from agno.team.mode import TeamMode
 
@@ -15,13 +11,6 @@ from backend.rag.knowledge_base import create_knowledge_base
 
 
 def create_travel_team(mcp_tools=None):
-    """
-    Build the multi-agent travel planning team.
-
-    Args:
-        mcp_tools: An open MCPTools instance shared by all agents. If None,
-                   agents have no MCP access (useful for unit tests).
-    """
     knowledge = create_knowledge_base()
 
     return Team(
@@ -37,18 +26,18 @@ def create_travel_team(mcp_tools=None):
         ],
         description=(
             "You are the lead travel planning coordinator. You MUST delegate to all 5 "
-            "specialist agents — destination researcher, accommodation, route optimizer, "
-            "budget optimizer, and itinerary compiler — for every trip plan request."
+            "specialist agents - destination researcher, accommodation, route optimizer, "
+            "budget optimizer, and itinerary compiler - for every trip plan request."
         ),
         instructions=[
-            "MANDATORY WORKFLOW — follow these steps for every request:",
+            "MANDATORY WORKFLOW - follow these steps for every request:",
             "1. Destination Researcher → destination info (weather, attractions, culture)",
             "2. Accommodation Agent → stays within budget",
             "3. Route Optimizer → distances and optimal visit order",
             "4. Budget Optimizer → cost analysis vs regional benchmarks",
             "5. Itinerary Compiler → final structured day-by-day plan (self-scored)",
-            "ALL 5 agents MUST be called — do NOT skip any.",
-            "Do not answer the user yourself — always delegate.",
+            "ALL 5 agents MUST be called - do NOT skip any.",
+            "Do not answer the user yourself - always delegate.",
             "Return the Itinerary Compiler's final output as the response.",
         ],
         stream_member_events=True,

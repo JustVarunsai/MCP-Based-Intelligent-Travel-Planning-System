@@ -1,10 +1,3 @@
-"""
-MCP Resource: live FX rates as a readable URI.
-
-URI:    travel://currency/rates
-Format: JSON. Single GET — no parameters.
-Backend: Frankfurter (free, no key).
-"""
 import httpx
 
 from mcp_server._app import mcp
@@ -15,7 +8,7 @@ FRANKFURTER_URL = "https://api.frankfurter.dev/v1/latest"
 
 @mcp.resource("travel://currency/rates", mime_type="application/json")
 def currency_rates() -> str:
-    """Latest FX rates with USD as the base currency."""
+    """Latest FX rates with USD as base."""
     try:
         resp = httpx.get(
             FRANKFURTER_URL,

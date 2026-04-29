@@ -1,8 +1,5 @@
-"""
-Destination Researcher — uses the custom MCP travel server (weather, country info,
-Wikivoyage destination guides) plus the Pinecone RAG knowledge base.
-"""
 from agno.agent import Agent
+
 from backend.agents.base import create_model
 from backend.rag.knowledge_base import create_knowledge_base
 

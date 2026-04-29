@@ -62,7 +62,7 @@
       "Waterproof pants",
       "Travel adapter"
     ],
-    "tips": "Weather can change quickly. Layering is key — be ready for sun, rain, and wind in the same day."
+    "tips": "Weather can change quickly. Layering is key - be ready for sun, rain, and wind in the same day."
   },
   {
     "climate": "cold/subarctic",
@@ -85,7 +85,7 @@
       "Crampons for icy terrain",
       "Lip balm with SPF"
     ],
-    "tips": "Dress in layers. Merino wool base layers are worth the investment. Protect extremities — frostbite hits fingers, toes, and ears first."
+    "tips": "Dress in layers. Merino wool base layers are worth the investment. Protect extremities - frostbite hits fingers, toes, and ears first."
   },
   {
     "climate": "hot_desert",
@@ -107,7 +107,7 @@
       "Sand-proof bag for electronics",
       "Light long pants instead of shorts"
     ],
-    "tips": "Stay hydrated — drink more water than you think you need. Avoid midday sun (11am-3pm). Desert nights can be surprisingly cold."
+    "tips": "Stay hydrated - drink more water than you think you need. Avoid midday sun (11am-3pm). Desert nights can be surprisingly cold."
   },
   {
     "climate": "alpine/mountain",
@@ -131,6 +131,6 @@
       "Altitude sickness medication",
       "Thermal flask for hot drinks"
     ],
-    "tips": "Altitude changes temperature fast — prepare for all conditions. UV is stronger at elevation, wear sunscreen even on cloudy days."
+    "tips": "Altitude changes temperature fast - prepare for all conditions. UV is stronger at elevation, wear sunscreen even on cloudy days."
   }
 ]

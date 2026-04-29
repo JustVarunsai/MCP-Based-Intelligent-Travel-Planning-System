@@ -1,9 +1,6 @@
-"""
-Direct Postgres connection to Supabase — no supabase-py SDK needed.
-Uses a single DATABASE_URL from the .env file.
-"""
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 from backend.config import config
 
 _engine = None
@@ -71,7 +68,6 @@ CREATE INDEX IF NOT EXISTS idx_agent_logs_trip_id ON agent_logs(trip_id);
 
 
 def ensure_tables():
-    """Run the schema SQL. Safe to call multiple times."""
     engine = get_engine()
     with engine.begin() as conn:
         for stmt in SCHEMA_SQL.split(";"):

@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import {
-  ArrowLeft, Calendar, DollarSign, Clock, ListChecks, Wrench, Loader2, MessageSquare,
+  ArrowLeft, Calendar, DollarSign, Clock, ListChecks, Wrench, Loader2,
 } from "lucide-react";
 import { getTrip, getTripLogs, type Trip, type TripLog } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,6 @@ export default function TripDashboard({
         </div>
       </div>
 
-      {/* tabs */}
       <div className="border-b" style={{ borderColor: "var(--border)" }}>
         <div className="flex gap-1 -mb-px">
           <TabButton active={tab === "itinerary"} onClick={() => setTab("itinerary")}>
@@ -102,9 +101,7 @@ export default function TripDashboard({
         </div>
       )}
 
-      {tab === "audit" && (
-        <AuditTrail logs={logs} />
-      )}
+      {tab === "audit" && <AuditTrail logs={logs} />}
     </div>
   );
 }
@@ -143,7 +140,6 @@ function AuditTrail({ logs }: { logs: TripLog[] | null }) {
     );
   }
 
-  // group by agent for the summary
   const byAgent: Record<string, TripLog[]> = {};
   for (const l of logs) {
     byAgent[l.agent_name] = byAgent[l.agent_name] || [];
@@ -153,10 +149,9 @@ function AuditTrail({ logs }: { logs: TripLog[] | null }) {
   return (
     <div className="space-y-4">
       <div className="card">
-        <div className="font-semibold mb-2">Agent reasoning summary</div>
+        <div className="font-semibold mb-2">Agent activity summary</div>
         <div className="text-sm text-[color:var(--muted)] mb-3">
           Every tool call across all agents during this trip's generation.
-          This is observability for multi-agent systems — full transparency of decision-making.
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Object.entries(byAgent).map(([agent, entries]) => {

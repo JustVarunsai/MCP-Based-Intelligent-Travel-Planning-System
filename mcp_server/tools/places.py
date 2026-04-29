@@ -1,7 +1,3 @@
-"""
-Places tool — find tourist attractions and amenities near a coordinate
-using the OpenStreetMap Overpass API. No key required.
-"""
 from typing import Any
 
 import httpx
@@ -20,21 +16,7 @@ def find_attractions(
     radius_m: int = 1500,
     limit: int = 25,
 ) -> dict[str, Any]:
-    """
-    Find tourist attractions within a radius of a coordinate.
-
-    Categories included: tourism (attraction/museum/viewpoint/gallery/artwork),
-    historic, and amenity=place_of_worship.
-
-    Args:
-        latitude, longitude: Center point.
-        radius_m: Search radius in metres. Default 1500.
-        limit: Maximum attractions to return (default 25, hard cap 100).
-
-    Returns:
-        Dict with center coords, radius, and a list of attractions
-        (name, latitude, longitude, kind, tags).
-    """
+    """Find tourist attractions within radius_m metres of the coordinate. Covers museums, viewpoints, historic sites, places of worship."""
     radius_m = max(100, min(10000, int(radius_m)))
     limit = max(1, min(100, int(limit)))
 

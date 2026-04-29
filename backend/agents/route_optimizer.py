@@ -1,8 +1,5 @@
-"""
-Route Optimizer — uses the travel MCP server's geocode / route /
-optimize_day_route tools (backed by free OpenStreetMap services).
-"""
 from agno.agent import Agent
+
 from backend.agents.base import create_model
 
 

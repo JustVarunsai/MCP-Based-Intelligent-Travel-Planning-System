@@ -1,8 +1,5 @@
-"""
-Budget Optimizer — analyses costs against RAG benchmarks; uses MCP convert_currency
-for cross-currency math.
-"""
 from agno.agent import Agent
+
 from backend.agents.base import create_model
 from backend.rag.knowledge_base import create_knowledge_base
 

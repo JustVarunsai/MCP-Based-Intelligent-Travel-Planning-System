@@ -1,8 +1,3 @@
-"""
-Weather tool — backed by the free Open-Meteo API (no key required).
-
-Open-Meteo docs: https://open-meteo.com/en/docs
-"""
 from typing import Any
 
 import httpx
@@ -15,22 +10,11 @@ OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
 @mcp.tool()
 def get_weather(latitude: float, longitude: float, days: int = 7) -> dict[str, Any]:
-    """
-    Get a daily weather forecast for a location.
-
-    Args:
-        latitude: Decimal latitude (-90 to 90).
-        longitude: Decimal longitude (-180 to 180).
-        days: Number of forecast days (1-16). Defaults to 7.
-
-    Returns:
-        A dict with: location coordinates, daily dates, max/min temperatures (°C),
-        and total precipitation (mm) for each day. Includes a one-line summary.
-    """
+    """Daily weather forecast for the given coordinates. days is 1-16, default 7. Returns daily max/min temperature in C and precipitation in mm."""
     if not (-90 <= latitude <= 90):
-        return {"error": f"latitude {latitude} out of range [-90, 90]"}
+        return {"error": f"latitude {latitude} out of range"}
     if not (-180 <= longitude <= 180):
-        return {"error": f"longitude {longitude} out of range [-180, 180]"}
+        return {"error": f"longitude {longitude} out of range"}
     days = max(1, min(16, int(days)))
 
     try:
@@ -57,7 +41,6 @@ def get_weather(latitude: float, longitude: float, days: int = 7) -> dict[str, A
     tmin = daily.get("temperature_2m_min", []) or []
     rain = daily.get("precipitation_sum", []) or []
 
-    # short summary the LLM can quote directly
     if dates:
         avg_high = sum(tmax) / len(tmax) if tmax else 0
         avg_low = sum(tmin) / len(tmin) if tmin else 0

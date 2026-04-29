@@ -1,10 +1,3 @@
-"""
-Geocoding + routing tools backed by free OpenStreetMap services.
-- Nominatim for geocoding (place name → lat/lon)
-- OSRM for routing (lat/lon pair → distance + time)
-
-Both are 1 req/sec fair-use; throttled and LRU-cached here.
-"""
 from typing import Any
 
 import httpx
@@ -21,7 +14,6 @@ _OSRM_PROFILES = {"driving": "driving", "walking": "foot", "cycling": "bike"}
 
 @make_lru()
 def _geocode_cached(query: str) -> tuple[float, float, str] | None:
-    """LRU-cached geocode primitive. Returns (lat, lon, display_name) or None."""
     throttle("nominatim")
     try:
         resp = httpx.get(
@@ -42,15 +34,7 @@ def _geocode_cached(query: str) -> tuple[float, float, str] | None:
 
 @mcp.tool()
 def geocode(query: str) -> dict[str, Any]:
-    """
-    Resolve a place name or address to coordinates.
-
-    Args:
-        query: Place name, address, or landmark (e.g. "Eiffel Tower, Paris").
-
-    Returns:
-        Dict with latitude, longitude, and display_name. Or {"error": ...} if unresolved.
-    """
+    """Resolve a place name or address to latitude/longitude coordinates."""
     result = _geocode_cached(query.strip())
     if not result:
         return {"error": f"No results for '{query}'"}
@@ -66,17 +50,7 @@ def route(
     to_longitude: float,
     mode: str = "driving",
 ) -> dict[str, Any]:
-    """
-    Calculate distance and travel time between two coordinate pairs.
-
-    Args:
-        from_latitude, from_longitude: Start coordinates.
-        to_latitude, to_longitude: End coordinates.
-        mode: One of "driving", "walking", "cycling". Defaults to driving.
-
-    Returns:
-        Dict with distance_km, duration_minutes, and the input coords. Or {"error": ...}.
-    """
+    """Distance (km) and travel time (minutes) between two coordinate pairs. mode is one of driving, walking, cycling."""
     profile = _OSRM_PROFILES.get(mode, "driving")
     url = (
         f"{OSRM_URL}/{profile}/"

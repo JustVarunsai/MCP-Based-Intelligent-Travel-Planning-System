@@ -1,5 +1,3 @@
-// Typed API client for the FastAPI backend.
-
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -13,18 +11,18 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText} — ${text || path}`);
+    throw new Error(`${res.status} ${res.statusText} - ${text || path}`);
   }
   return res.json() as Promise<T>;
 }
 
-// ─────────── plan ───────────
 export type AgentEvent = {
   i: number;
   ts: string;
   type: string;
   agent?: string;
   tool?: string;
+  args?: string;
   content?: string;
 };
 
@@ -63,7 +61,6 @@ export function pollPlanStatus(runId: string, since: number): Promise<PlanStatus
   return jsonFetch<PlanStatus>(`/api/plan/${runId}/status?since=${since}`);
 }
 
-// ─────────── trips ───────────
 export type TripSummary = {
   id: string;
   destination: string;
@@ -108,7 +105,6 @@ export function getTripLogs(id: string):
   return jsonFetch(`/api/trips/${id}/logs`);
 }
 
-// ─────────── explore ───────────
 export type ExploreHit = {
   score: number;
   name: string;
@@ -132,7 +128,6 @@ export function exploreSearch(q: string, topK = 8):
   return jsonFetch(`/api/explore?q=${encodeURIComponent(q)}&top_k=${topK}`);
 }
 
-// ─────────── health ───────────
 export function getHealth(): Promise<{
   ok: boolean;
   service: string;

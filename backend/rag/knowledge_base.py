@@ -1,8 +1,3 @@
-"""
-RAG knowledge base backed by Pinecone with Pinecone's own
-free embedding model (multilingual-e5-large, 1024 dims).
-No OpenAI credits used for embeddings.
-"""
 from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass, field
 
@@ -10,7 +5,7 @@ from pinecone import Pinecone, ServerlessSpec
 from agno.knowledge.embedder.base import Embedder
 from agno.vectordb.pineconedb import PineconeDb
 from agno.knowledge.knowledge import Knowledge
-from agno.knowledge.document.base import Document
+
 from backend.config import config
 
 EMBEDDING_MODEL = "multilingual-e5-large"
@@ -19,7 +14,6 @@ EMBEDDING_DIM = 1024
 
 @dataclass
 class PineconeEmbedder(Embedder):
-    """Uses Pinecone's free inference API for embeddings."""
     api_key: str = ""
     dimensions: Optional[int] = EMBEDDING_DIM
     _pc: Any = field(default=None, repr=False, init=False)
@@ -63,7 +57,6 @@ def create_vector_db(embedder=None):
 
 
 def create_knowledge_base():
-    """Build the shared travel knowledge base backed by Pinecone."""
     embedder = create_embedder()
     vector_db = create_vector_db(embedder)
     return Knowledge(

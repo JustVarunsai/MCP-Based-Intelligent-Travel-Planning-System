@@ -1,8 +1,8 @@
-"""
-CRUD operations using SQLAlchemy directly against the Supabase Postgres db.
-"""
+import json
 from typing import List, Optional
+
 from sqlalchemy import text
+
 from backend.database.supabase_client import get_engine, ensure_tables
 
 
@@ -46,7 +46,6 @@ class TripCRUD:
         itinerary_markdown: str = "",
         total_estimated_cost: float = 0,
     ) -> dict:
-        import json as _json
         with self.engine.begin() as conn:
             row = conn.execute(
                 text("""
@@ -68,7 +67,7 @@ class TripCRUD:
                     "days": duration_days,
                     "bgt": budget_usd,
                     "prefs": preferences,
-                    "ij": _json.dumps(itinerary_json) if itinerary_json else None,
+                    "ij": json.dumps(itinerary_json) if itinerary_json else None,
                     "im": itinerary_markdown,
                     "cost": total_estimated_cost,
                 },

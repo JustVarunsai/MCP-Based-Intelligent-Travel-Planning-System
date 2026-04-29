@@ -1,6 +1,3 @@
-"""
-Trip planning endpoints — kick off a multi-agent run, poll for progress.
-"""
 import logging
 from uuid import uuid4
 
@@ -8,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.api.state import (
-    append_event, create_run, get_run_status, set_status,
+    append_event, create_run, get_run, get_run_status, set_status,
 )
 from backend.services.trip_service import plan_trip_streaming
 
@@ -31,7 +28,6 @@ class PlanResponse(BaseModel):
 
 
 def _persist_audit_log(trip_id: str, events: list[dict]) -> None:
-    """Persist the streamed agent events into the agent_logs table."""
     try:
         from backend.database.crud import AgentLogCRUD
         log_crud = AgentLogCRUD()
@@ -54,12 +50,10 @@ def _persist_audit_log(trip_id: str, events: list[dict]) -> None:
                 duration_ms=None,
             )
         except Exception:
-            # don't break the run because audit logging hiccupped
             log.exception("audit log insert failed for one event")
 
 
 async def _run_plan(run_id: str, req: PlanRequest) -> None:
-    """Background task: run the team, stream events into state, persist trip + audit trail."""
     set_status(run_id, "running")
     try:
         async for event in plan_trip_streaming(
@@ -70,11 +64,9 @@ async def _run_plan(run_id: str, req: PlanRequest) -> None:
         ):
             append_event(run_id, event)
 
-        # when stream finishes, attempt to save the trip + audit trail
-        from backend.api.state import get_run
-        run = get_run(run_id)
-        content = (run or {}).get("content", "") if run else ""
-        events = (run or {}).get("events", []) if run else []
+        run = get_run(run_id) or {}
+        content = run.get("content", "")
+        events = run.get("events", [])
         trip_id = None
 
         if content:
@@ -92,12 +84,13 @@ async def _run_plan(run_id: str, req: PlanRequest) -> None:
                         itinerary_markdown=content,
                     )
                     trip_id = str(saved["id"])
-                    # persist agent reasoning audit trail
                     _persist_audit_log(trip_id, events)
             except Exception as save_err:
                 log.exception("Failed to save trip")
-                append_event(run_id, {"type": "warning",
-                                       "content": f"auto-save failed: {save_err}"})
+                append_event(run_id, {
+                    "type": "warning",
+                    "content": f"auto-save failed: {save_err}",
+                })
 
         set_status(run_id, "completed", result={"content": content}, trip_id=trip_id)
     except Exception as e:
@@ -107,10 +100,8 @@ async def _run_plan(run_id: str, req: PlanRequest) -> None:
 
 @router.post("", response_model=PlanResponse)
 async def start_plan(req: PlanRequest, background: BackgroundTasks):
-    """Start a trip-planning run; returns immediately with a run_id to poll."""
     run_id = str(uuid4())
     create_run(run_id, req.model_dump())
-    # FastAPI BackgroundTasks supports coroutines directly — no asyncio.run needed
     background.add_task(_run_plan, run_id, req)
     return PlanResponse(
         run_id=run_id,
@@ -121,7 +112,6 @@ async def start_plan(req: PlanRequest, background: BackgroundTasks):
 
 @router.get("/{run_id}/status")
 async def status(run_id: str, since: int = Query(0, ge=0)):
-    """Poll the status of a running plan. `since` returns only events after that index."""
     snap = get_run_status(run_id, since=since)
     if snap is None:
         raise HTTPException(status_code=404, detail="run not found")

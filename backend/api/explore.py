@@ -1,8 +1,3 @@
-"""
-Destination Explorer — semantic search over the Pinecone RAG knowledge base.
-Returns destinations that match a free-text query (e.g. "beaches in India",
-"high-altitude trek", "cheap southeast asia").
-"""
 import json
 import logging
 
@@ -20,7 +15,6 @@ async def search(
     top_k: int = Query(8, ge=1, le=25),
     only_destinations: bool = Query(True),
 ):
-    """Semantic search across the curated travel knowledge base."""
     if not config.pinecone_api_key:
         raise HTTPException(status_code=503, detail="pinecone not configured")
 
@@ -41,9 +35,9 @@ async def search(
             include_metadata=True,
             filter=flt,
         )
-    except Exception as e:
+    except Exception:
         log.exception("Pinecone query failed")
-        raise HTTPException(status_code=500, detail=f"search failed: {e}")
+        raise HTTPException(status_code=500, detail="search failed")
 
     out = []
     for m in result.matches:

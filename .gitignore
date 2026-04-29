@@ -24,3 +24,6 @@ out/
 
 # OS
 .DS_Store
+
+# private docs (not shipped to github)
+docs/

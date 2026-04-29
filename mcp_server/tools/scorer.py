@@ -1,17 +1,3 @@
-"""
-Itinerary scorer — deterministic, computable rubric (NO LLM-as-judge).
-
-Scores an itinerary 0–100 across six criteria:
-  1. Geographic coherence — sum of haversine distances between consecutive stops.
-  2. Time feasibility    — sum(activity_minutes) per day <= waking_hours.
-  3. Budget adherence    — actual_cost vs target; quadratic penalty for over-budget.
-  4. Diversity           — Shannon entropy across activity categories.
-  5. Pacing              — variance of daily activity counts.
-  6. Opening-hours       — % of activities with non-empty opening_hours info.
-
-This is intentionally a closed-form scorer — no calls to LLM, no calls to APIs.
-Every criterion is unit-testable.
-"""
 from typing import Any
 from math import log, sqrt
 
@@ -20,7 +6,6 @@ from mcp_server.tools.optimizer import _haversine_km
 
 
 def _coherence_score(daily_plans: list[dict]) -> tuple[float, dict]:
-    """Lower total inter-stop distance = better. Normalised by # stops."""
     total_km = 0.0
     legs = 0
     for day in daily_plans:
@@ -34,13 +19,11 @@ def _coherence_score(daily_plans: list[dict]) -> tuple[float, dict]:
             total_km += _haversine_km(coords[i], coords[i + 1])
             legs += 1
     avg_leg = (total_km / legs) if legs else 0.0
-    # 0 km/leg → 100; 5 km/leg → 50; 10+ km/leg → 0
     score = max(0.0, min(100.0, 100 - (avg_leg / 10) * 100))
     return score, {"total_km": round(total_km, 2), "avg_leg_km": round(avg_leg, 2), "legs": legs}
 
 
 def _feasibility_score(daily_plans: list[dict], waking_hours: float = 14.0) -> tuple[float, dict]:
-    """Sum of activity_minutes for each day must fit within waking_hours."""
     flagged_days = 0
     for day in daily_plans:
         total_min = sum(int(a.get("duration_minutes", 60) or 60) for a in (day.get("activities") or []))
@@ -53,19 +36,17 @@ def _feasibility_score(daily_plans: list[dict], waking_hours: float = 14.0) -> t
 
 
 def _budget_score(estimated_cost: float, target_budget: float) -> tuple[float, dict]:
-    """100 if within budget, quadratic penalty for overrun, soft penalty for >20% under."""
     if target_budget <= 0:
         return 50.0, {"reason": "no target budget"}
     ratio = estimated_cost / target_budget
     if ratio <= 1.0:
-        score = 100 - max(0, (0.8 - ratio) * 50)  # mild penalty for >20% under
+        score = 100 - max(0, (0.8 - ratio) * 50)
     else:
         score = max(0, 100 - ((ratio - 1) ** 2) * 200)
     return score, {"estimated": estimated_cost, "target": target_budget, "ratio": round(ratio, 2)}
 
 
 def _diversity_score(daily_plans: list[dict]) -> tuple[float, dict]:
-    """Shannon entropy over activity categories — higher = more varied."""
     counts: dict[str, int] = {}
     for day in daily_plans:
         for act in (day.get("activities") or []):
@@ -75,7 +56,6 @@ def _diversity_score(daily_plans: list[dict]) -> tuple[float, dict]:
     if total == 0:
         return 0.0, {"unique_kinds": 0}
     if len(counts) <= 1:
-        # only one category → zero diversity
         return 0.0, {"unique_kinds": len(counts)}
     entropy = -sum((c / total) * log(c / total) for c in counts.values())
     max_entropy = log(min(len(counts), total))
@@ -84,7 +64,6 @@ def _diversity_score(daily_plans: list[dict]) -> tuple[float, dict]:
 
 
 def _pacing_score(daily_plans: list[dict]) -> tuple[float, dict]:
-    """Low variance of daily activity counts = better pacing."""
     counts = [len(d.get("activities") or []) for d in daily_plans]
     if not counts:
         return 0.0, {}
@@ -92,13 +71,12 @@ def _pacing_score(daily_plans: list[dict]) -> tuple[float, dict]:
     if mean == 0:
         return 0.0, {"counts": counts}
     var = sum((c - mean) ** 2 for c in counts) / len(counts)
-    stdev_norm = sqrt(var) / mean  # coefficient of variation
+    stdev_norm = sqrt(var) / mean
     score = max(0.0, min(100.0, 100 - stdev_norm * 100))
     return score, {"counts": counts, "stdev_norm": round(stdev_norm, 3)}
 
 
 def _opening_hours_score(daily_plans: list[dict]) -> tuple[float, dict]:
-    """% of activities that include opening hours info."""
     total = 0
     with_hours = 0
     for day in daily_plans:
@@ -113,17 +91,7 @@ def _opening_hours_score(daily_plans: list[dict]) -> tuple[float, dict]:
 
 @mcp.tool()
 def score_itinerary(itinerary: dict[str, Any]) -> dict[str, Any]:
-    """
-    Score an itinerary 0–100 across six deterministic criteria.
-
-    Args:
-        itinerary: Dict matching the TripItinerary schema.
-                   Required: daily_plans (list).
-                   Optional: total_estimated_cost_usd, total_budget_usd.
-
-    Returns:
-        Dict with overall score, per-criterion sub-scores, and a list of issues.
-    """
+    """Score an itinerary 0-100 across six deterministic criteria: coherence (haversine), feasibility (waking-hours fit), budget (quadratic overrun penalty), diversity (Shannon entropy), pacing (variance), opening_hours coverage. No LLM calls."""
     daily_plans = itinerary.get("daily_plans") or []
     target = float(itinerary.get("total_budget_usd") or 0)
     estimated = float(itinerary.get("total_estimated_cost_usd") or 0)
@@ -158,7 +126,7 @@ def score_itinerary(itinerary: dict[str, Any]) -> dict[str, Any]:
     if bud_meta.get("ratio", 1) > 1.1:
         issues.append(f"Estimated cost {bud_meta['ratio']}x target budget")
     if coh_meta.get("avg_leg_km", 0) > 8:
-        issues.append("Stops are spread out — consider tighter clusters")
+        issues.append("Stops are spread out - consider tighter clusters")
 
     return {
         "overall_score": round(overall, 1),

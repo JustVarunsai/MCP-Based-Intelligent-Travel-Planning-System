@@ -1,7 +1,3 @@
-"""
-Destination search tool — uses Wikivoyage's MediaWiki API. No key required.
-Cleans the wikitext output to give plain text the LLM can use directly.
-"""
 from typing import Any
 import re
 
@@ -12,7 +8,6 @@ from mcp_server.config import config
 
 WIKIVOYAGE_URL = "https://en.wikivoyage.org/w/api.php"
 
-# strip wiki templates, links, formatting
 _LINK_RE = re.compile(r"\[\[(?:[^\]|]*\|)?([^\]]+)\]\]")
 _TEMPLATE_RE = re.compile(r"\{\{[^{}]*\}\}")
 _FORMAT_RE = re.compile(r"'{2,}")
@@ -20,8 +15,6 @@ _LISTING_RE = re.compile(r"^\*\s*", flags=re.MULTILINE)
 
 
 def _clean_wikitext(text: str) -> str:
-    """Strip MediaWiki markup down to plain text."""
-    # repeatedly strip nested templates
     prev = None
     while prev != text:
         prev = text
@@ -39,18 +32,7 @@ def search_destinations(
     sections: list[str] | None = None,
     max_chars: int = 4000,
 ) -> dict[str, Any]:
-    """
-    Look up a destination on Wikivoyage and return cleaned-up section text.
-
-    Args:
-        query: Destination name (e.g. "Paris", "Tokyo").
-        sections: Section titles to extract (e.g. ["See", "Do", "Eat", "Sleep"]).
-                  If omitted, returns the lede + See/Do/Eat/Sleep.
-        max_chars: Total character cap for the returned text.
-
-    Returns:
-        Dict with destination, sections (mapping name → text), and source URL.
-    """
+    """Wikivoyage destination guide. sections defaults to ['See','Do','Eat','Sleep']. Returns cleaned plain text per section."""
     sections = sections or ["See", "Do", "Eat", "Sleep"]
 
     try:
@@ -80,7 +62,6 @@ def search_destinations(
     if not wikitext:
         return {"error": "Empty page"}
 
-    # naive section split on `== Heading ==` lines
     section_map: dict[str, str] = {}
     current = "Lede"
     buf: list[str] = []

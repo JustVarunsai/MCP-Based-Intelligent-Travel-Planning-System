@@ -1,17 +1,3 @@
-"""
-Seed curated travel data into Pinecone using the free hosted multilingual-e5-large
-embedding model (zero OpenAI cost).
-
-Embedding text composition is **location- and category-aware** so semantic search
-on natural-language queries works well, e.g.:
-
-    "beaches in India"          → Goa, Varkala, Andaman, Gokarna
-    "high-altitude mountain"    → Ladakh, Spiti, Tawang
-    "cheap southeast asia"      → Bali, Chiang Mai, Hoi An
-    "heritage in Rajasthan"     → Jaipur, Udaipur, Jodhpur
-
-Run: python -m backend.rag.seed_data [--reset]
-"""
 import argparse
 import hashlib
 import json
@@ -21,11 +7,10 @@ import time
 
 from dotenv import load_dotenv
 
-# load .env at project root
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_ROOT, ".env"))
 
-from pinecone import Pinecone, ServerlessSpec  # noqa: E402
+from pinecone import Pinecone, ServerlessSpec
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "travel_documents")
 PINECONE_KEY = os.getenv("PINECONE_API_KEY")
@@ -46,10 +31,6 @@ def _make_id(text: str) -> str:
 
 
 def _destination_embedding_text(d: dict) -> str:
-    """
-    Compose retrieval-friendly text combining type, country, region,
-    descriptors, and tags. This is what gets embedded.
-    """
     parts = [
         d.get("name", ""),
         f"Country: {d.get('country', '')}",
@@ -67,7 +48,6 @@ def _destination_embedding_text(d: dict) -> str:
 
 
 def _destination_metadata(d: dict) -> dict:
-    """Pinecone metadata — used for filtering and result rendering."""
     return {
         "type": "destination",
         "name": d.get("name", ""),
@@ -81,24 +61,27 @@ def _destination_metadata(d: dict) -> dict:
         "latitude": d.get("latitude"),
         "longitude": d.get("longitude"),
         "best_months": d.get("best_months", ""),
-        # store the full doc as JSON for the agent to read
         "doc_json": json.dumps(d, ensure_ascii=False)[:8000],
     }
 
 
 def _benchmark_embedding_text(b: dict) -> str:
-    parts = [f"Budget benchmark for {b.get('region', '')}",
-             f"Country: {b.get('country', '')}",
-             json.dumps(b.get("daily_costs_usd", {})),
-             b.get("notes", "")]
+    parts = [
+        f"Budget benchmark for {b.get('region', '')}",
+        f"Country: {b.get('country', '')}",
+        json.dumps(b.get("daily_costs_usd", {})),
+        b.get("notes", ""),
+    ]
     return "\n".join(parts)
 
 
 def _packing_embedding_text(g: dict) -> str:
-    parts = [f"Packing guide for {g.get('climate', '')} climate",
-             f"Activities: {', '.join(g.get('activities', []))}" if g.get("activities") else "",
-             "Items: " + ", ".join(g.get("essentials", [])) if g.get("essentials") else ""]
-    return "\n".join(p for p in parts if p)
+    parts = [f"Packing guide for {g.get('climate', '')} climate"]
+    if g.get("activities"):
+        parts.append(f"Activities: {', '.join(g.get('activities', []))}")
+    if g.get("essentials"):
+        parts.append("Items: " + ", ".join(g.get("essentials", [])))
+    return "\n".join(parts)
 
 
 def _ensure_index(pc: Pinecone) -> None:
@@ -118,7 +101,6 @@ def _ensure_index(pc: Pinecone) -> None:
 
 
 def _embed_batch(pc: Pinecone, texts: list[str]) -> list[list[float]]:
-    """Embed up to 96 texts at once via Pinecone's hosted model (free)."""
     out: list[list[float]] = []
     for i in range(0, len(texts), 90):
         chunk = texts[i:i + 90]
@@ -148,16 +130,16 @@ def seed(reset: bool = False) -> None:
         except Exception as e:
             print(f"  warn: delete_all returned {e}")
 
-    # ── collect docs ────────────────────────────────────────
     destinations = _load_json("destinations.json")
     benchmarks = _load_json("budget_benchmarks.json")
     guides = _load_json("packing_guides.json")
 
-    print(f"\nLoaded {len(destinations)} destinations, "
-          f"{len(benchmarks)} budget benchmarks, "
-          f"{len(guides)} packing guides.")
+    print(
+        f"\nLoaded {len(destinations)} destinations, "
+        f"{len(benchmarks)} budget benchmarks, "
+        f"{len(guides)} packing guides."
+    )
 
-    # build (id, text, metadata) tuples
     all_records: list[tuple[str, str, dict]] = []
 
     for d in destinations:
@@ -190,12 +172,10 @@ def seed(reset: bool = False) -> None:
             },
         ))
 
-    # ── embed ───────────────────────────────────────────────
     print(f"\nEmbedding {len(all_records)} documents (model={EMBED_MODEL}, dim={EMBED_DIM})...")
     texts = [r[1] for r in all_records]
     vectors = _embed_batch(pc, texts)
 
-    # ── upsert ──────────────────────────────────────────────
     payload = []
     for (rid, _text, meta), vec in zip(all_records, vectors):
         payload.append({"id": rid, "values": vec, "metadata": meta})
@@ -211,7 +191,6 @@ def seed(reset: bool = False) -> None:
     stats = idx.describe_index_stats()
     print(f"\nIndex now contains {stats.get('total_vector_count')} vectors.")
 
-    # ── smoke-test queries ──────────────────────────────────
     sample_queries = [
         "beaches in India",
         "high-altitude mountain monastery",
@@ -220,7 +199,7 @@ def seed(reset: bool = False) -> None:
         "cheap backpacker destination yoga",
         "honeymoon islands turquoise water",
     ]
-    print("\n── Smoke tests ──")
+    print("\nSmoke tests:")
     for q in sample_queries:
         emb = pc.inference.embed(
             model=EMBED_MODEL,
@@ -234,14 +213,13 @@ def seed(reset: bool = False) -> None:
             filter={"type": "destination"},
         )
         names = [m.metadata.get("name", "?") for m in results.matches]
-        print(f"  '{q}'  →  {names}")
+        print(f"  '{q}'  ->  {names}")
 
-    print("\n✓ Seed complete.")
+    print("\nSeed complete.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reset", action="store_true",
-                        help="Delete existing vectors before re-seeding (recommended for schema changes)")
+    parser.add_argument("--reset", action="store_true")
     args = parser.parse_args()
     seed(reset=args.reset)

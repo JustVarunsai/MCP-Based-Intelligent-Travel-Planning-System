@@ -1,8 +1,3 @@
-"""
-Country information + currency conversion tools.
-- REST Countries: country facts (capital, currency, languages, timezones).
-- Frankfurter: live FX rates (no key required).
-"""
 from typing import Any
 
 import httpx
@@ -16,15 +11,7 @@ FRANKFURTER_URL = "https://api.frankfurter.dev/v1"
 
 @mcp.tool()
 def country_info(name_or_code: str) -> dict[str, Any]:
-    """
-    Look up basic country information.
-
-    Args:
-        name_or_code: Common name (e.g. "France") or ISO 2/3 code (e.g. "FR", "FRA").
-
-    Returns:
-        Dict with capital, currencies, languages, timezones, region, population, flag.
-    """
+    """Country facts: capital, currencies, languages, timezones, region, population. Accepts common name or ISO 2/3 code."""
     q = name_or_code.strip()
     endpoint = "alpha" if len(q) in (2, 3) and q.isalpha() else "name"
     try:
@@ -66,17 +53,7 @@ def country_info(name_or_code: str) -> dict[str, Any]:
 
 @mcp.tool()
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> dict[str, Any]:
-    """
-    Convert an amount from one currency to another using live FX rates.
-
-    Args:
-        amount: Numeric amount to convert.
-        from_currency: 3-letter ISO code (e.g. "USD").
-        to_currency: 3-letter ISO code (e.g. "EUR").
-
-    Returns:
-        Dict with converted amount, rate, and date.
-    """
+    """Convert an amount between currencies using live FX rates. Currencies as 3-letter ISO codes."""
     fc = from_currency.upper().strip()
     tc = to_currency.upper().strip()
     if fc == tc:

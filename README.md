@@ -1,49 +1,74 @@
 # MCP Based Intelligent Travel Planning System
 
-> Final-year B.Tech CSE major project — a multi-agent AI travel planner built around a custom Model Context Protocol (MCP) server.
+A travel planner where five AI agents work together to build a day-by-day trip plan.
+The agents talk to a custom Model Context Protocol (MCP) server I wrote in Python.
+That server exposes weather, geocoding, routing, places, country data, currency,
+and Wikivoyage destination guides as MCP tools, plus a couple of resources and
+prompt templates.
 
-A multi-agent AI travel planning system where 5 specialised agents collaborate to generate detailed, personalised travel itineraries. The agents do not call APIs directly — they speak only **Model Context Protocol** to a custom MCP server we authored, which exposes travel tools, resources, and prompts backed by free public APIs.
+This is my final-year B.Tech CSE major project.
 
-## What's interesting about this project
+## What it does
 
-1. **Custom MCP server, not just a consumer** — implemented in Python using the official `mcp` SDK. Uses all three protocol primitives (Tools + Resources + Prompts), not just tools.
-2. **Composite tools, not 1:1 API wrappers** — e.g. `plan_day_in_city` internally calls weather + attractions + routing + currency in one tool.
-3. **Domain-reasoning tools** — TSP-based route ordering, deterministic 6-criterion itinerary scoring rubric.
-4. **Multi-agent team as MCP client** — 5 Agno specialists + orchestrator share one MCP server.
-5. **Dual transport** — same server runs `stdio` for local dev and `SSE` for cloud, switched by config.
-6. **Production middleware** — LRU cache, rate-limit throttle, structured errors.
-7. **Agent reasoning audit trail** — every tool call across all agents logged to Supabase, viewable in the UI.
+You enter a destination, days, budget and preferences. The five agents then
+coordinate through the MCP server to research the place, find accommodation,
+order the daily route, run a budget check and compile a full itinerary with
+self-scoring before showing it to you. The plan, plus the full reasoning trail
+of every tool each agent called, is saved to Supabase so you can come back to it.
 
-## Architecture
+## Stack
 
-```
-Frontend (Next.js + Tailwind + shadcn/ui)
-      ↓ HTTP
-Backend (FastAPI + Agno multi-agent team)
-      ↓ MCP protocol
-MCP Server (custom — tools / resources / prompts)
-      ↓ free travel APIs
-Open-Meteo · OSM Nominatim · OSRM · Overpass · REST Countries · Frankfurter · Wikivoyage
-```
+- Python `mcp` SDK + FastMCP for the server
+- FastAPI + the Agno framework for the multi-agent backend
+- Next.js 15 + Tailwind for the frontend
+- Pinecone as the vector store (uses Pinecone's own free hosted embedding model,
+  so no OpenAI credits are spent on embeddings)
+- Supabase Postgres for trips and agent activity logs
+- OpenAI gpt-4o-mini as the only LLM
 
-Persistence: **Pinecone** (RAG knowledge base — 47 curated travel docs) + **Supabase Postgres** (saved trips + agent reasoning logs).
+## Free APIs the MCP server uses
+
+Open-Meteo, OpenStreetMap Nominatim, OSRM, Overpass, REST Countries,
+Frankfurter, Wikivoyage. None of these need an API key.
 
 ## Repo layout
 
 ```
-.
-├── mcp_server/        # Custom MCP server (Python `mcp` SDK + FastMCP)
-├── backend/           # FastAPI + Agno multi-agent team
-├── frontend/          # Next.js 15 + Tailwind + shadcn/ui
-├── tests/             # pytest suite
-├── docs/              # architecture, demo script, runbook
-└── deploy/            # Railway + Vercel configs
+mcp_server/        custom MCP server
+backend/           FastAPI app + Agno agents
+frontend/          Next.js app
+tests/             pytest for the deterministic tools (TSP + scorer)
+deploy/            Railway and Vercel config
 ```
 
-## Quickstart
+## Local setup
 
-See [`docs/runbook.md`](docs/runbook.md) for full setup.
+```bash
+pip install -r mcp_server/requirements.txt
+pip install -r backend/requirements.txt
 
-## Status
+cp .env.example .env
+# fill in OPENAI_API_KEY, PINECONE_API_KEY, SUPABASE_DATABASE_URL
 
-This project is being rebuilt in phases. See the build phases in the project root or the upstream task list. Currently the codebase is mid-rebuild — not all phases complete.
+python -m backend.rag.seed_data --reset   # one time, loads 90 docs into Pinecone
+```
+
+Then in three terminals:
+
+```bash
+python -m mcp_server.server --sse                   # MCP server on :8000
+uvicorn backend.main:app --reload --port 8001       # API on :8001
+cd frontend && npm install && npm run dev           # UI on :3000
+```
+
+Open http://localhost:3000.
+
+## Tests
+
+```bash
+pytest tests/test_mcp_tools.py
+```
+
+## License
+
+Personal academic project.

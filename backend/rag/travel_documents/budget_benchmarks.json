@@ -49,7 +49,7 @@
     "avg_hotel_per_night_usd": {"budget": 15, "mid": 50, "luxury": 180},
     "avg_meal_cost_usd": {"street": 3, "restaurant": 10, "fine_dining": 45},
     "avg_transport_per_day_usd": 8,
-    "currency_tips": "Carry USD as backup. Argentina has complex exchange rate situation — check blue dollar rate. ATM fees can be high.",
+    "currency_tips": "Carry USD as backup. Argentina has complex exchange rate situation - check blue dollar rate. ATM fees can be high.",
     "tipping": "10% at restaurants is standard. Not expected for taxis.",
     "sim_card_usd": 8,
     "visa_notes": "Most countries visa-free for western passports. Brazil requires e-visa for some nationalities."
@@ -60,7 +60,7 @@
     "avg_hotel_per_night_usd": {"budget": 40, "mid": 120, "luxury": 500},
     "avg_meal_cost_usd": {"street": 4, "restaurant": 15, "fine_dining": 70},
     "avg_transport_per_day_usd": 12,
-    "currency_tips": "UAE dirham and others pegged to USD. Turkey uses lira with high inflation — prices fluctuate. Cards widely accepted in cities.",
+    "currency_tips": "UAE dirham and others pegged to USD. Turkey uses lira with high inflation - prices fluctuate. Cards widely accepted in cities.",
     "tipping": "10-15% in restaurants. Baksheesh culture in some countries.",
     "sim_card_usd": 12,
     "visa_notes": "UAE and Turkey offer visa-on-arrival or e-visa for most. Jordan Pass includes visa + Petra entry."
@@ -93,7 +93,7 @@
     "avg_hotel_per_night_usd": {"budget": 10, "mid": 40, "luxury": 200},
     "avg_meal_cost_usd": {"street": 1, "restaurant": 5, "fine_dining": 25},
     "avg_transport_per_day_usd": 5,
-    "currency_tips": "India is increasingly digital (UPI payments). Maldives is expensive — budget for resort markups. Cash still king in Nepal.",
+    "currency_tips": "India is increasingly digital (UPI payments). Maldives is expensive - budget for resort markups. Cash still king in Nepal.",
     "tipping": "Not mandatory but appreciated. 10% at nice restaurants in India.",
     "sim_card_usd": 3,
     "visa_notes": "India requires e-visa in advance. Nepal offers visa-on-arrival. Sri Lanka has ETA system."
@@ -107,6 +107,6 @@
     "currency_tips": "Czech and Hungary use their own currencies (CZK, HUF), not Euro. Croatia adopted Euro in 2023. Cards widely accepted in cities.",
     "tipping": "10% at restaurants is standard. Round up for taxis.",
     "sim_card_usd": 10,
-    "visa_notes": "All in Schengen area — same 90-day visa-free rules as Western Europe."
+    "visa_notes": "All in Schengen area - same 90-day visa-free rules as Western Europe."
   }
 ]

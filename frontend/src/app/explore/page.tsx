@@ -147,7 +147,7 @@ function ResultCard({ hit, q }: { hit: ExploreHit; q: string }) {
         )}
         {budget && (
           <div>
-            ~${budget.budget}–${budget.luxury}/day
+            ~${budget.budget}-${budget.luxury}/day
           </div>
         )}
       </div>

@@ -1,12 +1,5 @@
-"""
-Accommodation Agent — uses the travel MCP server's search_destinations
-(Wikivoyage 'Sleep' content) and budget benchmarks from the Budget Optimizer
-to recommend accommodation tiers.
-
-Note: the previous version of this project called the third-party Airbnb MCP
-server. We now author our own MCP server so live booking is out of scope.
-"""
 from agno.agent import Agent
+
 from backend.agents.base import create_model
 
 

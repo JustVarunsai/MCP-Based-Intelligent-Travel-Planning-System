@@ -1,28 +1,21 @@
-"""
-Backend configuration. No UI dependencies — pure env-var driven.
-"""
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Config:
-    # ── LLM ─────────────────────────────────────────
     OPENAI_MODEL = "gpt-4o-mini"
 
-    # ── MCP ─────────────────────────────────────────
-    # If MCP_SERVER_URL is set, agents connect via SSE.
-    # Otherwise, they spawn the server as a stdio subprocess.
     MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "")
     MCP_AUTH_TOKEN = os.getenv("MCP_AUTH_TOKEN", "")
     MCP_STDIO_COMMAND = os.getenv(
         "MCP_STDIO_COMMAND",
-        "python -m mcp_server.server",
+        f"{sys.executable} -m mcp_server.server",
     )
     MCP_TIMEOUT = int(os.getenv("MCP_TIMEOUT", "60"))
 
-    # ── Pinecone ────────────────────────────────────
     PINECONE_INDEX = os.getenv("PINECONE_INDEX", "travel-knowledge")
     PINECONE_CLOUD = os.getenv("PINECONE_CLOUD", "aws")
     PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
@@ -41,7 +34,6 @@ class Config:
 
     @property
     def use_sse(self) -> bool:
-        """True when an MCP_SERVER_URL is configured."""
         return bool(self.MCP_SERVER_URL)
 
 
