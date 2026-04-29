@@ -1,29 +1,30 @@
+"""
+Budget Optimizer — analyses costs against RAG benchmarks; uses MCP convert_currency
+for cross-currency math.
+"""
 from agno.agent import Agent
-from agents.base import create_model
-from rag.knowledge_base import create_knowledge_base
+from backend.agents.base import create_model
+from backend.rag.knowledge_base import create_knowledge_base
 
 
-def create_budget_optimizer(knowledge=None):
-    """
-    Analyses trip costs against regional benchmarks from the
-    knowledge base and suggests ways to stay on budget.
-    """
+def create_budget_optimizer(mcp_tools=None, knowledge=None):
     return Agent(
         name="Budget Optimizer",
-        role="Optimizes trip budget using cost benchmarks from the knowledge base",
+        role="Optimises trip budget using regional benchmarks and currency conversion",
         model=create_model(),
         description=(
-            "Budget analyst with access to regional cost-of-living benchmarks "
-            "and pricing data for accommodation, food, and transport."
+            "Budget analyst with regional cost-of-living benchmarks (RAG) and "
+            "live currency conversion (MCP)."
         ),
         instructions=[
-            "Search the knowledge base for budget benchmarks for the destination region",
-            "Break down costs into categories: accommodation, food, transport, activities, misc",
-            "Compare the user's budget against regional averages",
-            "Suggest specific money-saving tips for this destination",
-            "Flag if the budget is unrealistic and recommend adjustments",
-            "Always show costs in USD with local currency equivalents when useful",
+            "Search the knowledge base for budget benchmarks for the destination region.",
+            "Break down costs into: accommodation, food, transport, activities, misc.",
+            "Compare the user's budget against regional averages.",
+            "Use convert_currency to show local-currency equivalents where helpful.",
+            "Suggest concrete money-saving tips for this destination.",
+            "Flag if the budget is unrealistic and recommend adjustments.",
         ],
+        tools=[mcp_tools] if mcp_tools else [],
         knowledge=knowledge or create_knowledge_base(),
         search_knowledge=True,
         markdown=True,

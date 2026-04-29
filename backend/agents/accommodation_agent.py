@@ -1,35 +1,32 @@
+"""
+Accommodation Agent — uses the travel MCP server's search_destinations
+(Wikivoyage 'Sleep' content) and budget benchmarks from the Budget Optimizer
+to recommend accommodation tiers.
+
+Note: the previous version of this project called the third-party Airbnb MCP
+server. We now author our own MCP server so live booking is out of scope.
+"""
 from agno.agent import Agent
-from agents.base import create_model, create_airbnb_mcp
+from backend.agents.base import create_model
 
 
-def create_accommodation_agent():
-    """
-    Finds real Airbnb listings using the Airbnb MCP server.
-    Returns pricing, amenities, and location info.
-    Falls back to LLM knowledge if MCP fails.
-    """
-    tools = []
-    try:
-        tools.append(create_airbnb_mcp())
-    except Exception:
-        tools = []
-
+def create_accommodation_agent(mcp_tools=None):
     return Agent(
         name="Accommodation Agent",
-        role="Finds and recommends accommodations",
+        role="Recommends accommodation options for the destination and budget",
         model=create_model(),
         description=(
-            "Accommodation specialist with access to live Airbnb listings "
-            "when available, plus knowledge of typical pricing ranges for most cities."
+            "Accommodation specialist. Uses MCP search_destinations for Wikivoyage "
+            "'Sleep' content and budget benchmarks for realistic pricing across tiers."
         ),
         instructions=[
-            "Search Airbnb for options matching the destination, dates, and budget",
-            "If Airbnb MCP is unavailable, suggest typical accommodation types with realistic price ranges",
-            "Return at least 3 options across different price points",
-            "Include property name/type, nightly rate, total cost, key amenities",
-            "Note the neighbourhood and proximity to the city centre",
-            "If a listing looks particularly good value, highlight that",
+            "Call search_destinations(query, sections=['Sleep']) on the MCP server "
+            "to retrieve neighbourhood and stay recommendations.",
+            "Cross-reference price points with regional budget benchmarks.",
+            "Return at least 3 options across budget / mid-range / luxury tiers.",
+            "Each option: type (hostel / apartment / hotel), neighbourhood, "
+            "estimated nightly rate (USD), key amenities, why it's a good fit.",
         ],
-        tools=tools,
+        tools=[mcp_tools] if mcp_tools else [],
         markdown=True,
     )

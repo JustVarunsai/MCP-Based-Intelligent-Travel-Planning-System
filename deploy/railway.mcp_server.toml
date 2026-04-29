@@ -1,0 +1,20 @@
+# Railway service config for the custom MCP server.
+#
+# Deploy:
+#   railway init  (in repo root)
+#   railway service create travel-mcp-server
+#   railway up --service travel-mcp-server -c deploy/railway.mcp_server.toml
+#
+# Required env vars on the Railway service:
+#   MCP_AUTH_TOKEN   (any random secret — share with the backend service)
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pip install -r mcp_server/requirements.txt"
+
+[deploy]
+startCommand = "python -m mcp_server.server --sse --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/sse"
+healthcheckTimeout = 30

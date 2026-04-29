@@ -11,7 +11,7 @@ from agno.knowledge.embedder.base import Embedder
 from agno.vectordb.pineconedb import PineconeDb
 from agno.knowledge.knowledge import Knowledge
 from agno.knowledge.document.base import Document
-from config import config
+from backend.config import config
 
 EMBEDDING_MODEL = "multilingual-e5-large"
 EMBEDDING_DIM = 1024

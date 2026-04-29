@@ -4,7 +4,7 @@ Uses a single DATABASE_URL from the .env file.
 """
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
-from config import config
+from backend.config import config
 
 _engine = None
 _SessionLocal = None

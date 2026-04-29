@@ -3,7 +3,7 @@ CRUD operations using SQLAlchemy directly against the Supabase Postgres db.
 """
 from typing import List, Optional
 from sqlalchemy import text
-from database.supabase_client import get_engine, ensure_tables
+from backend.database.supabase_client import get_engine, ensure_tables
 
 
 class UserCRUD:

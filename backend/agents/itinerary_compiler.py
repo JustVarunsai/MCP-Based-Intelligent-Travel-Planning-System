@@ -1,10 +1,14 @@
+"""
+Itinerary Compiler — synthesises team outputs into a structured day-by-day plan
+matching the TripItinerary Pydantic schema. Self-evaluates with score_itinerary.
+"""
 from typing import List, Optional
 from pydantic import BaseModel
 from agno.agent import Agent
-from agents.base import create_model
+from backend.agents.base import create_model
 
 
-# ── structured output schemas ────────────────────────────────────
+# ── structured output schema ───────────────────────────────────
 
 class DayActivity(BaseModel):
     time: str
@@ -37,29 +41,26 @@ class TripItinerary(BaseModel):
     travel_tips: List[str]
 
 
-# ── agent factory ────────────────────────────────────────────────
-
-def create_itinerary_compiler():
-    """
-    Takes outputs from all other agents and compiles them
-    into a structured day-by-day travel itinerary.
-    """
+def create_itinerary_compiler(mcp_tools=None):
     return Agent(
         name="Itinerary Compiler",
-        role="Compiles all research into a structured, detailed itinerary",
+        role="Synthesises team outputs into a structured day-by-day plan",
         model=create_model(),
         description=(
-            "Master itinerary compiler that synthesises accommodation, route, "
-            "budget, and research data into a polished day-by-day travel plan."
+            "Master itinerary compiler. Combines accommodation, route, budget, "
+            "and research data into a polished plan and self-evaluates with "
+            "score_itinerary before finalising."
         ),
         instructions=[
-            "Combine all team member outputs into a coherent day-by-day plan",
-            "Ensure timings are realistic — include buffer time between activities",
-            "Keep the daily cost total consistent with the overall budget",
-            "Generate a packing list based on the destination climate and activities",
-            "Add practical travel tips at the end",
-            "Output must follow the TripItinerary schema exactly",
+            "Combine all team member outputs into a coherent day-by-day plan.",
+            "Ensure timings are realistic — include buffer time between activities.",
+            "Keep the daily cost total consistent with the overall budget.",
+            "Generate a packing list based on destination climate and activities.",
+            "Add practical travel tips at the end.",
+            "Call score_itinerary on the MCP server to self-evaluate. Revise once if score < 60.",
+            "Output must follow the TripItinerary schema exactly.",
         ],
+        tools=[mcp_tools] if mcp_tools else [],
         output_schema=TripItinerary,
         markdown=True,
     )

@@ -1,6 +1,5 @@
 """
-Placeholder tests for database CRUD operations.
-These need a running Supabase instance with the schema set up.
+Database CRUD smoke tests. Skipped unless SUPABASE_DATABASE_URL is set.
 """
 import os
 import sys
@@ -11,26 +10,27 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 @pytest.mark.skipif(
     not os.getenv("SUPABASE_DATABASE_URL"),
-    reason="Supabase not configured — set SUPABASE_DATABASE_URL to run"
+    reason="Supabase not configured — set SUPABASE_DATABASE_URL to run",
 )
-def test_user_crud():
-    from database.crud import UserCRUD
-    crud = UserCRUD()
-    user = crud.get_or_create("test@example.com", "Test User")
-    assert user["email"] == "test@example.com"
+def test_user_crud_roundtrip():
+    from backend.database.crud import UserCRUD
 
-    # calling again should return the same user
-    same = crud.get_or_create("test@example.com")
+    crud = UserCRUD()
+    user = crud.get_or_create("pytest@example.com", "Pytest User")
+    assert user["email"] == "pytest@example.com"
+
+    same = crud.get_or_create("pytest@example.com")
     assert same["id"] == user["id"]
 
 
 @pytest.mark.skipif(
     not os.getenv("SUPABASE_DATABASE_URL"),
-    reason="Supabase not configured"
+    reason="Supabase not configured",
 )
-def test_trip_crud():
-    from database.crud import UserCRUD, TripCRUD
-    user = UserCRUD().get_or_create("test@example.com")
+def test_trip_crud_roundtrip():
+    from backend.database.crud import UserCRUD, TripCRUD
+
+    user = UserCRUD().get_or_create("pytest@example.com")
     trip_crud = TripCRUD()
 
     trip = trip_crud.save_trip(
@@ -43,7 +43,6 @@ def test_trip_crud():
     assert trip["destination"] == "Test City"
 
     trips = trip_crud.get_user_trips(user["id"])
-    assert any(t["id"] == trip["id"] for t in trips)
+    assert any(str(t["id"]) == str(trip["id"]) for t in trips)
 
-    # cleanup
     trip_crud.delete_trip(trip["id"])

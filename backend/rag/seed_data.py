@@ -1,138 +1,247 @@
 """
-Seed curated travel data directly into Pinecone.
-Uses Pinecone's free built-in embeddings — zero OpenAI cost.
-Run: python -m rag.seed_data
+Seed curated travel data into Pinecone using the free hosted multilingual-e5-large
+embedding model (zero OpenAI cost).
+
+Embedding text composition is **location- and category-aware** so semantic search
+on natural-language queries works well, e.g.:
+
+    "beaches in India"          → Goa, Varkala, Andaman, Gokarna
+    "high-altitude mountain"    → Ladakh, Spiti, Tawang
+    "cheap southeast asia"      → Bali, Chiang Mai, Hoi An
+    "heritage in Rajasthan"     → Jaipur, Udaipur, Jodhpur
+
+Run: python -m backend.rag.seed_data [--reset]
 """
+import argparse
+import hashlib
 import json
 import os
 import sys
 import time
-import hashlib
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
-from pinecone import Pinecone, ServerlessSpec
+# load .env at project root
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(_ROOT, ".env"))
+
+from pinecone import Pinecone, ServerlessSpec  # noqa: E402
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "travel_documents")
 PINECONE_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = "travel-knowledge"
+INDEX_NAME = os.getenv("PINECONE_INDEX", "travel-knowledge")
 EMBED_MODEL = "multilingual-e5-large"
 EMBED_DIM = 1024
+PINECONE_CLOUD = os.getenv("PINECONE_CLOUD", "aws")
+PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
 
 
-def _load_json(filename):
+def _load_json(filename: str):
     with open(os.path.join(DATA_DIR, filename)) as f:
         return json.load(f)
 
 
-def _make_id(text):
+def _make_id(text: str) -> str:
     return hashlib.md5(text.encode()).hexdigest()
 
 
-def seed():
+def _destination_embedding_text(d: dict) -> str:
+    """
+    Compose retrieval-friendly text combining type, country, region,
+    descriptors, and tags. This is what gets embedded.
+    """
+    parts = [
+        d.get("name", ""),
+        f"Country: {d.get('country', '')}",
+        f"Region: {d.get('region', '')}",
+        f"State/Province: {d.get('state', '')}" if d.get("state") else "",
+        f"Type: {d.get('type', '')}",
+        f"Subtypes: {', '.join(d.get('subtypes', []))}",
+        f"Climate: {d.get('climate', '')}",
+        f"Best months: {d.get('best_months', '')}",
+        f"Tags: {', '.join(d.get('tags', []))}",
+        f"Top attractions: {', '.join(d.get('top_attractions', []))}",
+        d.get("description", ""),
+    ]
+    return "\n".join(p for p in parts if p)
+
+
+def _destination_metadata(d: dict) -> dict:
+    """Pinecone metadata — used for filtering and result rendering."""
+    return {
+        "type": "destination",
+        "name": d.get("name", ""),
+        "country": d.get("country", ""),
+        "region": d.get("region", ""),
+        "state": d.get("state", ""),
+        "primary_type": d.get("type", ""),
+        "subtypes": d.get("subtypes", []),
+        "tags": d.get("tags", []),
+        "trending_2026": bool(d.get("trending_2026", False)),
+        "latitude": d.get("latitude"),
+        "longitude": d.get("longitude"),
+        "best_months": d.get("best_months", ""),
+        # store the full doc as JSON for the agent to read
+        "doc_json": json.dumps(d, ensure_ascii=False)[:8000],
+    }
+
+
+def _benchmark_embedding_text(b: dict) -> str:
+    parts = [f"Budget benchmark for {b.get('region', '')}",
+             f"Country: {b.get('country', '')}",
+             json.dumps(b.get("daily_costs_usd", {})),
+             b.get("notes", "")]
+    return "\n".join(parts)
+
+
+def _packing_embedding_text(g: dict) -> str:
+    parts = [f"Packing guide for {g.get('climate', '')} climate",
+             f"Activities: {', '.join(g.get('activities', []))}" if g.get("activities") else "",
+             "Items: " + ", ".join(g.get("essentials", [])) if g.get("essentials") else ""]
+    return "\n".join(p for p in parts if p)
+
+
+def _ensure_index(pc: Pinecone) -> None:
+    existing = [i.name for i in pc.list_indexes()]
+    if INDEX_NAME in existing:
+        print(f"Index '{INDEX_NAME}' already exists.")
+        return
+    print(f"Creating index '{INDEX_NAME}' (dim={EMBED_DIM}, {PINECONE_CLOUD}/{PINECONE_REGION})...")
+    pc.create_index(
+        name=INDEX_NAME,
+        dimension=EMBED_DIM,
+        metric="cosine",
+        spec=ServerlessSpec(cloud=PINECONE_CLOUD, region=PINECONE_REGION),
+    )
+    print("Waiting 20s for the index to become ready...")
+    time.sleep(20)
+
+
+def _embed_batch(pc: Pinecone, texts: list[str]) -> list[list[float]]:
+    """Embed up to 96 texts at once via Pinecone's hosted model (free)."""
+    out: list[list[float]] = []
+    for i in range(0, len(texts), 90):
+        chunk = texts[i:i + 90]
+        result = pc.inference.embed(
+            model=EMBED_MODEL,
+            inputs=chunk,
+            parameters={"input_type": "passage"},
+        )
+        out.extend([d.values for d in result.data])
+    return out
+
+
+def seed(reset: bool = False) -> None:
     if not PINECONE_KEY:
         print("ERROR: PINECONE_API_KEY must be set in .env")
         sys.exit(1)
 
     pc = Pinecone(api_key=PINECONE_KEY)
-    print(f"Using Pinecone's free embeddings ({EMBED_MODEL})")
-
-    # create index if it doesn't exist
-    existing = [i.name for i in pc.list_indexes()]
-    if INDEX_NAME not in existing:
-        print(f"Creating index '{INDEX_NAME}'...")
-        pc.create_index(
-            name=INDEX_NAME,
-            dimension=EMBED_DIM,
-            metric="cosine",
-            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-        )
-        print("Waiting 20s for index to be ready...")
-        time.sleep(20)
-    else:
-        print(f"Index '{INDEX_NAME}' already exists")
-
+    _ensure_index(pc)
     idx = pc.Index(INDEX_NAME)
 
-    # collect all documents
-    docs = []
+    if reset:
+        print("Deleting all existing vectors in the index...")
+        try:
+            idx.delete(delete_all=True)
+            time.sleep(3)
+        except Exception as e:
+            print(f"  warn: delete_all returned {e}")
 
+    # ── collect docs ────────────────────────────────────────
     destinations = _load_json("destinations.json")
-    for dest in destinations:
-        docs.append({
-            "id": _make_id(dest["name"]),
-            "text": json.dumps(dest, indent=2),
-            "metadata": {"type": "destination", "name": dest["name"]},
-        })
-
     benchmarks = _load_json("budget_benchmarks.json")
-    for bench in benchmarks:
-        docs.append({
-            "id": _make_id("budget_" + bench["region"]),
-            "text": json.dumps(bench, indent=2),
-            "metadata": {"type": "budget_benchmark", "region": bench["region"]},
-        })
-
     guides = _load_json("packing_guides.json")
-    for guide in guides:
-        docs.append({
-            "id": _make_id("packing_" + guide["climate"]),
-            "text": json.dumps(guide, indent=2),
-            "metadata": {"type": "packing_guide", "climate": guide["climate"]},
-        })
 
-    print(f"\nEmbedding and upserting {len(docs)} documents...")
+    print(f"\nLoaded {len(destinations)} destinations, "
+          f"{len(benchmarks)} budget benchmarks, "
+          f"{len(guides)} packing guides.")
 
-    # batch embed and upsert (Pinecone inference supports batches of up to 96)
-    batch_size = 20
-    for i in range(0, len(docs), batch_size):
-        batch = docs[i : i + batch_size]
-        texts = [d["text"] for d in batch]
+    # build (id, text, metadata) tuples
+    all_records: list[tuple[str, str, dict]] = []
 
-        embeddings = pc.inference.embed(
-            model=EMBED_MODEL,
-            inputs=texts,
-            parameters={"input_type": "passage"},
-        )
+    for d in destinations:
+        all_records.append((
+            _make_id("dest_" + d["name"]),
+            _destination_embedding_text(d),
+            _destination_metadata(d),
+        ))
 
-        vectors = []
-        for doc, emb in zip(batch, embeddings.data):
-            meta = doc["metadata"].copy()
-            meta["text"] = doc["text"][:500]  # store snippet for retrieval
-            vectors.append({
-                "id": doc["id"],
-                "values": emb.values,
-                "metadata": meta,
-            })
+    for b in benchmarks:
+        all_records.append((
+            _make_id("budget_" + b["region"]),
+            _benchmark_embedding_text(b),
+            {
+                "type": "budget_benchmark",
+                "region": b.get("region", ""),
+                "country": b.get("country", ""),
+                "doc_json": json.dumps(b, ensure_ascii=False)[:4000],
+            },
+        ))
 
-        idx.upsert(vectors=vectors)
-        print(f"  Upserted batch {i // batch_size + 1}: {[d['metadata'].get('name') or d['metadata'].get('region') or d['metadata'].get('climate') for d in batch]}")
+    for g in guides:
+        all_records.append((
+            _make_id("pack_" + g["climate"]),
+            _packing_embedding_text(g),
+            {
+                "type": "packing_guide",
+                "climate": g.get("climate", ""),
+                "doc_json": json.dumps(g, ensure_ascii=False)[:4000],
+            },
+        ))
 
-    # wait for indexing
-    print("\nWaiting 10s for indexing...")
-    time.sleep(10)
+    # ── embed ───────────────────────────────────────────────
+    print(f"\nEmbedding {len(all_records)} documents (model={EMBED_MODEL}, dim={EMBED_DIM})...")
+    texts = [r[1] for r in all_records]
+    vectors = _embed_batch(pc, texts)
 
-    # verify
+    # ── upsert ──────────────────────────────────────────────
+    payload = []
+    for (rid, _text, meta), vec in zip(all_records, vectors):
+        payload.append({"id": rid, "values": vec, "metadata": meta})
+
+    print(f"Upserting {len(payload)} vectors in batches of 50...")
+    for i in range(0, len(payload), 50):
+        idx.upsert(vectors=payload[i:i + 50])
+        print(f"  upserted {min(i + 50, len(payload))}/{len(payload)}")
+
+    print("Waiting 8s for indexing to settle...")
+    time.sleep(8)
+
     stats = idx.describe_index_stats()
-    print(f"Total vectors in index: {stats.get('total_vector_count')}")
+    print(f"\nIndex now contains {stats.get('total_vector_count')} vectors.")
 
-    # test search
-    q_emb = pc.inference.embed(
-        model=EMBED_MODEL,
-        inputs=["beach tropical island vacation"],
-        parameters={"input_type": "query"},
-    )
-    results = idx.query(vector=q_emb.data[0].values, top_k=3, include_metadata=True)
-    print(f"\nTest search 'beach tropical island' ({len(results.matches)} results):")
-    for m in results.matches:
-        name = m.metadata.get("name") or m.metadata.get("region") or m.metadata.get("climate")
-        print(f"  [{m.metadata.get('type')}] {name} (score: {m.score:.3f})")
+    # ── smoke-test queries ──────────────────────────────────
+    sample_queries = [
+        "beaches in India",
+        "high-altitude mountain monastery",
+        "tropical beach island Southeast Asia",
+        "heritage UNESCO site Rajasthan",
+        "cheap backpacker destination yoga",
+        "honeymoon islands turquoise water",
+    ]
+    print("\n── Smoke tests ──")
+    for q in sample_queries:
+        emb = pc.inference.embed(
+            model=EMBED_MODEL,
+            inputs=[q],
+            parameters={"input_type": "query"},
+        )
+        results = idx.query(
+            vector=emb.data[0].values,
+            top_k=4,
+            include_metadata=True,
+            filter={"type": "destination"},
+        )
+        names = [m.metadata.get("name", "?") for m in results.matches]
+        print(f"  '{q}'  →  {names}")
 
-    print("\nDone!")
+    print("\n✓ Seed complete.")
 
 
 if __name__ == "__main__":
-    seed()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--reset", action="store_true",
+                        help="Delete existing vectors before re-seeding (recommended for schema changes)")
+    args = parser.parse_args()
+    seed(reset=args.reset)

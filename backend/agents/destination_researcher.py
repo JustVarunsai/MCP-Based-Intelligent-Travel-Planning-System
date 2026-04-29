@@ -1,31 +1,29 @@
+"""
+Destination Researcher — uses the custom MCP travel server (weather, country info,
+Wikivoyage destination guides) plus the Pinecone RAG knowledge base.
+"""
 from agno.agent import Agent
-from agno.tools.serper import SerperTools
-from agents.base import create_model
-from config import config
-from rag.knowledge_base import create_knowledge_base
+from backend.agents.base import create_model
+from backend.rag.knowledge_base import create_knowledge_base
 
 
-def create_destination_researcher(knowledge=None):
-    """
-    Researches destinations using Serper (live web) and the
-    Pinecone knowledge base (curated travel data).
-    """
+def create_destination_researcher(mcp_tools=None, knowledge=None):
     return Agent(
         name="Destination Researcher",
-        role="Researches destinations using web search and curated travel knowledge",
+        role="Researches destinations using the travel MCP server and curated knowledge",
         model=create_model(),
         description=(
-            "Expert travel researcher with access to web search and a curated "
-            "knowledge base of destinations, budget data, and travel tips."
+            "Expert travel researcher with access to MCP-served weather, country info, "
+            "and Wikivoyage destination guides, plus a curated Pinecone knowledge base."
         ),
         instructions=[
-            "Search the knowledge base first for destination info before hitting the web",
-            "Provide current weather patterns, visa requirements, safety info, and best times to visit",
-            "Include cultural norms, local customs, and practical tips",
-            "List the top attractions with brief descriptions",
-            "Keep your output structured and concise",
+            "First, search the curated knowledge base for the destination.",
+            "Then call MCP tools: get_weather, country_info, search_destinations.",
+            "Provide weather patterns, visa/currency notes, safety info, and best times to visit.",
+            "List top attractions with brief descriptions.",
+            "Keep your output structured and concise.",
         ],
-        tools=[SerperTools(api_key=config.serper_api_key)],
+        tools=[mcp_tools] if mcp_tools else [],
         knowledge=knowledge or create_knowledge_base(),
         search_knowledge=True,
         add_datetime_to_context=True,
