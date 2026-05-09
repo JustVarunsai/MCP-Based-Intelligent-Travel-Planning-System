@@ -38,10 +38,10 @@ export default function ExplorePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Destination Explorer</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Explore Destinations</h1>
         <p className="text-[color:var(--muted)] mt-1">
-          Semantic search over our 90-document curated knowledge base, embedded with
-          location and category awareness.
+          Search 74 destinations by vibe, region, or activity. Results are ranked
+          by semantic similarity, not just keyword match.
         </p>
       </div>
 

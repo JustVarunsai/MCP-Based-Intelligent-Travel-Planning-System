@@ -101,7 +101,8 @@ function PlanForm() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Plan a trip</h1>
         <p className="text-[color:var(--muted)] mt-1">
-          Five agents will coordinate through the MCP server to build your itinerary.
+          Enter a destination and preferences. Five agents coordinate to build a
+          day-by-day itinerary, then the result is saved to your trip history.
         </p>
       </div>
 
@@ -163,8 +164,10 @@ function PlanForm() {
                 onClick={() => toggleTag(t)}
                 disabled={running}
                 className={cn(
-                  "tag cursor-pointer",
-                  tags.includes(t) && "ring-2 ring-[color:var(--accent)] bg-white"
+                  "tag cursor-pointer transition-all",
+                  tags.includes(t)
+                    ? "ring-2 ring-[color:var(--accent)] bg-[color:var(--accent)] !text-[color:var(--accent-fg)]"
+                    : "hover:bg-white"
                 )}
               >
                 {t}

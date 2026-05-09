@@ -53,13 +53,14 @@ cp .env.example .env
 python -m backend.rag.seed_data --reset   # one time, loads 90 docs into Pinecone
 ```
 
-Then in three terminals:
+Then in two terminals:
 
 ```bash
-python -m mcp_server.server --sse                   # MCP server on :8000
-uvicorn backend.main:app --reload --port 8001       # API on :8001
-cd frontend && npm install && npm run dev           # UI on :3000
+uvicorn backend.main:app --reload --port 8001   # API on :8001
+cd frontend && npm install && npm run dev       # UI on :3000
 ```
+
+The backend spawns the MCP server automatically as a subprocess. You only need a separate MCP terminal if you set `MCP_SERVER_URL` to point to a remote SSE instance.
 
 Open http://localhost:3000.
 
